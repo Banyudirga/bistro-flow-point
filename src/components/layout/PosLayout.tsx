@@ -1,0 +1,160 @@
+
+import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Outlet, Navigate } from 'react-router-dom';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarProvider, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { ShoppingCart, Package, Clock, FileText, User, LogOut, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+export const PosLayout: React.FC = () => {
+  const { user, isAuthorized, signOut } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // If no user is logged in, redirect to login
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <Sidebar className="h-screen">
+          <SidebarHeader className="p-4 flex items-center">
+            <div className="text-sidebar-foreground text-2xl font-bold">
+              RestaurantPOS
+            </div>
+          </SidebarHeader>
+          
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild active={location.pathname === '/pos'}>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start" 
+                        onClick={() => navigate('/pos')}
+                      >
+                        <ShoppingCart className="mr-2 h-5 w-5" />
+                        <span>POS</span>
+                      </Button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  {isAuthorized(['owner', 'warehouse_admin']) && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild active={location.pathname === '/inventory'}>
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start" 
+                          onClick={() => navigate('/inventory')}
+                        >
+                          <Package className="mr-2 h-5 w-5" />
+                          <span>Inventory</span>
+                        </Button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                  
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild active={location.pathname === '/receipts'}>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start" 
+                        onClick={() => navigate('/receipts')}
+                      >
+                        <FileText className="mr-2 h-5 w-5" />
+                        <span>Receipts</span>
+                      </Button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild active={location.pathname === '/shifts'}>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start" 
+                        onClick={() => navigate('/shifts')}
+                      >
+                        <Clock className="mr-2 h-5 w-5" />
+                        <span>Shifts</span>
+                      </Button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  {isAuthorized(['owner']) && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild active={location.pathname === '/settings'}>
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start" 
+                          onClick={() => navigate('/settings')}
+                        >
+                          <Settings className="mr-2 h-5 w-5" />
+                          <span>Settings</span>
+                        </Button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                  
+                  {isAuthorized(['owner']) && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild active={location.pathname === '/users'}>
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start" 
+                          onClick={() => navigate('/users')}
+                        >
+                          <User className="mr-2 h-5 w-5" />
+                          <span>Users</span>
+                        </Button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          
+          <SidebarFooter className="p-4 border-t border-sidebar-border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-accent-foreground">
+                  {user.firstName?.[0] || user.email[0].toUpperCase()}
+                </div>
+                <div className="ml-2">
+                  <p className="text-sm font-medium text-sidebar-foreground">
+                    {user.firstName} {user.lastName}
+                  </p>
+                  <p className="text-xs text-sidebar-foreground/70 capitalize">
+                    {user.role.replace('_', ' ')}
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleSignOut} 
+                className="text-sidebar-foreground/70 hover:text-sidebar-foreground"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
+          </SidebarFooter>
+        </Sidebar>
+        
+        <main className="flex-1 p-6 overflow-auto">
+          <Outlet />
+        </main>
+      </div>
+    </SidebarProvider>
+  );
+};

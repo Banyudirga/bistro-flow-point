@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// POS specific colors
+				pos: {
+					primary: '#0D9488', // teal
+					secondary: '#F59E0B', // amber
+					dark: '#1E293B', // slate-800
+					light: '#F8FAFC', // slate-50
+					success: '#10B981', // emerald-500
+					error: '#EF4444', // red-500
 				}
 			},
 			borderRadius: {
