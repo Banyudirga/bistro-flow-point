@@ -6,6 +6,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarProvider,
 import { ShoppingCart, Package, Clock, FileText, User, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { cn } from "@/lib/utils";
 
 export const PosLayout: React.FC = () => {
   const { user, isAuthorized, signOut } = useAuth();
@@ -37,10 +38,10 @@ export const PosLayout: React.FC = () => {
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild active={location.pathname === '/pos'}>
+                    <SidebarMenuButton asChild>
                       <Button 
                         variant="ghost" 
-                        className="w-full justify-start" 
+                        className={cn("w-full justify-start", location.pathname === '/pos' && "bg-accent text-accent-foreground")}
                         onClick={() => navigate('/pos')}
                       >
                         <ShoppingCart className="mr-2 h-5 w-5" />
@@ -51,10 +52,10 @@ export const PosLayout: React.FC = () => {
                   
                   {isAuthorized(['owner', 'warehouse_admin']) && (
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild active={location.pathname === '/inventory'}>
+                      <SidebarMenuButton asChild>
                         <Button 
                           variant="ghost" 
-                          className="w-full justify-start" 
+                          className={cn("w-full justify-start", location.pathname === '/inventory' && "bg-accent text-accent-foreground")}
                           onClick={() => navigate('/inventory')}
                         >
                           <Package className="mr-2 h-5 w-5" />
@@ -65,10 +66,10 @@ export const PosLayout: React.FC = () => {
                   )}
                   
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild active={location.pathname === '/receipts'}>
+                    <SidebarMenuButton asChild>
                       <Button 
                         variant="ghost" 
-                        className="w-full justify-start" 
+                        className={cn("w-full justify-start", location.pathname === '/receipts' && "bg-accent text-accent-foreground")}
                         onClick={() => navigate('/receipts')}
                       >
                         <FileText className="mr-2 h-5 w-5" />
@@ -78,10 +79,10 @@ export const PosLayout: React.FC = () => {
                   </SidebarMenuItem>
                   
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild active={location.pathname === '/shifts'}>
+                    <SidebarMenuButton asChild>
                       <Button 
                         variant="ghost" 
-                        className="w-full justify-start" 
+                        className={cn("w-full justify-start", location.pathname === '/shifts' && "bg-accent text-accent-foreground")}
                         onClick={() => navigate('/shifts')}
                       >
                         <Clock className="mr-2 h-5 w-5" />
@@ -92,10 +93,10 @@ export const PosLayout: React.FC = () => {
                   
                   {isAuthorized(['owner']) && (
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild active={location.pathname === '/settings'}>
+                      <SidebarMenuButton asChild>
                         <Button 
                           variant="ghost" 
-                          className="w-full justify-start" 
+                          className={cn("w-full justify-start", location.pathname === '/settings' && "bg-accent text-accent-foreground")}
                           onClick={() => navigate('/settings')}
                         >
                           <Settings className="mr-2 h-5 w-5" />
@@ -107,10 +108,10 @@ export const PosLayout: React.FC = () => {
                   
                   {isAuthorized(['owner']) && (
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild active={location.pathname === '/users'}>
+                      <SidebarMenuButton asChild>
                         <Button 
                           variant="ghost" 
-                          className="w-full justify-start" 
+                          className={cn("w-full justify-start", location.pathname === '/users' && "bg-accent text-accent-foreground")}
                           onClick={() => navigate('/users')}
                         >
                           <User className="mr-2 h-5 w-5" />

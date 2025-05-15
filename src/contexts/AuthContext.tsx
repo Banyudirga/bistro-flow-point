@@ -1,6 +1,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 // Define user roles
 export type UserRole = 'owner' | 'warehouse_admin' | 'cashier';
@@ -25,83 +27,162 @@ interface AuthContextType {
 // Create AuthContext
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user data (will be replaced with Supabase)
-const MOCK_USERS = [
-  {
-    id: '1',
-    email: 'owner@example.com',
-    password: 'password',
-    firstName: 'John',
-    lastName: 'Owner',
-    role: 'owner' as UserRole
-  },
-  {
-    id: '2',
-    email: 'warehouse@example.com',
-    password: 'password',
-    firstName: 'Jane',
-    lastName: 'Warehouse',
-    role: 'warehouse_admin' as UserRole
-  },
-  {
-    id: '3',
-    email: 'cashier@example.com',
-    password: 'password',
-    firstName: 'Bob',
-    lastName: 'Cashier',
-    role: 'cashier' as UserRole
-  }
-];
+// Function to clean up auth state - prevents auth limbo issues
+const cleanupAuthState = () => {
+  // Remove standard auth tokens
+  localStorage.removeItem('supabase.auth.token');
+  // Remove all Supabase auth keys from localStorage
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+    }
+  });
+  // Remove from sessionStorage if in use
+  Object.keys(sessionStorage || {}).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      sessionStorage.removeItem(key);
+    }
+  });
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check for existing session on mount
+  // Initialize auth state and set up listeners
   useEffect(() => {
-    const storedUser = localStorage.getItem('pos_user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse stored user:', error);
-        localStorage.removeItem('pos_user');
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          setSupabaseUser(currentSession.user);
+          
+          // Defer data fetching to prevent Supabase auth deadlocks
+          setTimeout(async () => {
+            try {
+              // Fetch user profile data
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentSession.user.id)
+                .single();
+                
+              if (profileError) {
+                console.error('Error fetching profile:', profileError);
+                return;
+              }
+              
+              if (profileData) {
+                setUser({
+                  id: currentSession.user.id,
+                  email: currentSession.user.email || '',
+                  firstName: profileData.first_name || '',
+                  lastName: profileData.last_name || '',
+                  role: profileData.role as UserRole || 'cashier'
+                });
+              }
+            } catch (error) {
+              console.error('Error in auth state change:', error);
+            }
+          }, 0);
+        } else {
+          setSupabaseUser(null);
+          setUser(null);
+        }
+        
+        // Set loading to false after auth state is initialized
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    );
+    
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      
+      if (currentSession?.user) {
+        setSupabaseUser(currentSession.user);
+        
+        // Fetch user profile
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentSession.user.id)
+          .single()
+          .then(({ data: profileData, error: profileError }) => {
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+              return;
+            }
+            
+            if (profileData) {
+              setUser({
+                id: currentSession.user.id,
+                email: currentSession.user.email || '',
+                firstName: profileData.first_name || '',
+                lastName: profileData.last_name || '',
+                role: profileData.role as UserRole || 'cashier'
+              });
+            }
+            
+            setLoading(false);
+          });
+      } else {
+        setLoading(false);
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Sign in function (will be replaced with Supabase auth)
+  // Sign in function with Supabase
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // In a real app, this would be a call to Supabase auth
-      const mockUser = MOCK_USERS.find(u => u.email === email && u.password === password);
-      
-      if (!mockUser) {
-        throw new Error('Invalid login credentials');
+      // Clean up existing state and attempt global sign out first
+      cleanupAuthState();
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
       }
       
-      const { password: _, ...userWithoutPassword } = mockUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('pos_user', JSON.stringify(userWithoutPassword));
-      toast.success(`Welcome back, ${userWithoutPassword.firstName}`);
-    } catch (error) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      if (data.user) {
+        toast.success(`Welcome back, ${data.user.email}`);
+      }
+    } catch (error: any) {
       console.error('Login error:', error);
-      toast.error('Login failed. Please check your credentials.');
+      toast.error(error.message || 'Login failed. Please check your credentials.');
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Sign out function
+  // Sign out function with Supabase
   const signOut = async () => {
     try {
-      localStorage.removeItem('pos_user');
+      // Clean up auth state
+      cleanupAuthState();
+      
+      // Attempt global sign out
+      await supabase.auth.signOut({ scope: 'global' });
+      
       setUser(null);
       toast.success('Logged out successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logout error:', error);
       toast.error('Failed to log out');
       throw error;

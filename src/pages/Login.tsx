@@ -6,11 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from '@/components/ui/sonner';
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const { user, signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,8 +25,47 @@ const Login = () => {
     return <Navigate to="/pos" replace />;
   }
   
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!firstName.trim() || !lastName.trim()) {
+      toast.error('Please enter your first and last name');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            role: 'cashier' // Default role for new users
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Registration successful! Please sign in.');
+      setIsSignUp(false);
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      toast.error(error.message || 'Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSignUp) {
+      handleSignUp(e);
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -36,17 +80,46 @@ const Login = () => {
     }
   };
   
+  const toggleMode = () => {
+    setIsSignUp(!isSignUp);
+  };
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">Restaurant POS</CardTitle>
           <CardDescription className="text-center">
-            Sign in to your account to continue
+            {isSignUp ? 'Create an account to get started' : 'Sign in to your account to continue'}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {isSignUp && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    placeholder="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -72,22 +145,32 @@ const Login = () => {
               />
             </div>
             
-            <div className="text-sm text-muted-foreground">
-              <p>Demo accounts:</p>
-              <ul className="list-disc list-inside ml-2 mt-1">
-                <li>owner@example.com / password</li>
-                <li>warehouse@example.com / password</li>
-                <li>cashier@example.com / password</li>
-              </ul>
-            </div>
+            {!isSignUp && (
+              <div className="text-sm text-muted-foreground">
+                <p>Demo accounts:</p>
+                <ul className="list-disc list-inside ml-2 mt-1">
+                  <li>owner@example.com / password</li>
+                  <li>warehouse@example.com / password</li>
+                  <li>cashier@example.com / password</li>
+                </ul>
+              </div>
+            )}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col gap-4">
             <Button 
               type="submit" 
               className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? (isSignUp ? "Creating account..." : "Signing in...") : (isSignUp ? "Sign up" : "Sign in")}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={toggleMode}
+            >
+              {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
             </Button>
           </CardFooter>
         </form>
