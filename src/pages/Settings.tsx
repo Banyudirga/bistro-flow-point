@@ -1,299 +1,234 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
-import { Settings as SettingsIcon, Building, Printer, Receipt } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 
-// Restaurant settings interface
-interface RestaurantSettings {
-  name: string;
-  address: string;
-  phone: string;
-  email: string;
-  taxRate: number;
-  logo: string | null;
-}
-
-// Receipt settings interface
-interface ReceiptSettings {
-  showLogo: boolean;
-  showTaxDetails: boolean;
-  footerText: string;
-  printAutomatically: boolean;
-}
-
-// Initial restaurant settings
-const initialRestaurantSettings: RestaurantSettings = {
-  name: 'Restaurant Name',
-  address: '123 Restaurant St, City',
-  phone: '(123) 456-7890',
-  email: 'info@restaurant.com',
-  taxRate: 8.5,
-  logo: null
-};
-
-// Initial receipt settings
-const initialReceiptSettings: ReceiptSettings = {
-  showLogo: true,
-  showTaxDetails: true,
-  footerText: 'Thank you for your visit!\nPlease come again',
-  printAutomatically: true
-};
-
 const Settings = () => {
-  const { isAuthorized } = useAuth();
+  const { user } = useAuth();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   
-  // Redirect if not authorized
-  if (!isAuthorized(['owner'])) {
-    return <Navigate to="/pos" replace />;
+  // Fetch user profile on mount
+  useEffect(() => {
+    if (user) {
+      setEmail(user.email || '');
+      
+      // Fetch user profile
+      const fetchProfile = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+          
+        if (error) {
+          toast.error('Failed to load profile');
+          return;
+        }
+        
+        if (data) {
+          setFirstName(data.first_name || '');
+          setLastName(data.last_name || '');
+        }
+      };
+      
+      fetchProfile();
+    }
+  }, [user]);
+  
+  // Handle profile update
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) return;
+    
+    setIsSaving(true);
+    try {
+      // Update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+        
+      if (profileError) throw profileError;
+      
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  // Handle password change
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      // Update password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      // Clear password fields
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      
+      toast.success('Password updated successfully');
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast.error('Failed to update password');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  // Check if user is authenticated
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
   
-  const [restaurantSettings, setRestaurantSettings] = useState<RestaurantSettings>(initialRestaurantSettings);
-  const [receiptSettings, setReceiptSettings] = useState<ReceiptSettings>(initialReceiptSettings);
-  
-  // Handle restaurant settings change
-  const handleRestaurantSettingChange = (key: keyof RestaurantSettings, value: string | number | null) => {
-    setRestaurantSettings(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-  
-  // Handle receipt settings change
-  const handleReceiptSettingChange = (key: keyof ReceiptSettings, value: boolean | string) => {
-    setReceiptSettings(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-  
-  // Save restaurant settings
-  const saveRestaurantSettings = () => {
-    // In a real app, this would call an API to save the settings
-    toast.success("Restaurant settings saved successfully");
-  };
-  
-  // Save receipt settings
-  const saveReceiptSettings = () => {
-    // In a real app, this would call an API to save the settings
-    toast.success("Receipt settings saved successfully");
-  };
-  
   return (
-    <div className="h-full">
-      <div className="flex items-center mb-6">
-        <h1 className="text-2xl font-bold flex items-center">
-          <SettingsIcon className="mr-2 h-6 w-6" />
-          Settings
-        </h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Settings</h1>
       </div>
       
-      <Tabs defaultValue="restaurant" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="restaurant" className="flex items-center">
-            <Building className="mr-2 h-4 w-4" />
-            Restaurant
-          </TabsTrigger>
-          <TabsTrigger value="receipt" className="flex items-center">
-            <Receipt className="mr-2 h-4 w-4" />
-            Receipt
-          </TabsTrigger>
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="restaurant" className="space-y-4">
+        <TabsContent value="profile">
           <Card>
             <CardHeader>
-              <CardTitle>Restaurant Information</CardTitle>
-              <CardDescription>
-                Manage your restaurant details that appear on receipts and reports
-              </CardDescription>
+              <CardTitle>Profile Settings</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="restaurant-name">Restaurant Name</Label>
-                  <Input
-                    id="restaurant-name"
-                    value={restaurantSettings.name}
-                    onChange={(e) => handleRestaurantSettingChange('name', e.target.value)}
-                  />
+            <CardContent>
+              <form onSubmit={handleProfileUpdate} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input 
+                      id="firstName" 
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Enter your first name"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input 
+                      id="lastName" 
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Enter your last name"
+                      required
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="restaurant-phone">Phone Number</Label>
-                  <Input
-                    id="restaurant-phone"
-                    value={restaurantSettings.phone}
-                    onChange={(e) => handleRestaurantSettingChange('phone', e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="restaurant-address">Address</Label>
-                <Input
-                  id="restaurant-address"
-                  value={restaurantSettings.address}
-                  onChange={(e) => handleRestaurantSettingChange('address', e.target.value)}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="restaurant-email">Email</Label>
-                  <Input
-                    id="restaurant-email"
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input 
+                    id="email" 
                     type="email"
-                    value={restaurantSettings.email}
-                    onChange={(e) => handleRestaurantSettingChange('email', e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email address"
+                    disabled // Email can't be changed
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="tax-rate">Tax Rate (%)</Label>
-                  <Input
-                    id="tax-rate"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={restaurantSettings.taxRate}
-                    onChange={(e) => handleRestaurantSettingChange('taxRate', parseFloat(e.target.value) || 0)}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="restaurant-logo">Logo</Label>
-                <div className="flex items-center gap-4">
-                  {restaurantSettings.logo ? (
-                    <div className="w-16 h-16 border rounded flex items-center justify-center overflow-hidden">
-                      <img src={restaurantSettings.logo} alt="Restaurant logo" className="max-w-full max-h-full" />
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 border rounded flex items-center justify-center bg-gray-100 text-gray-500 text-xs">
-                      No logo
-                    </div>
-                  )}
-                  
-                  <Button variant="outline" size="sm">
-                    Upload Logo
-                  </Button>
-                  
-                  {restaurantSettings.logo && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="text-red-500"
-                      onClick={() => handleRestaurantSettingChange('logo', null)}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </div>
-                <p className="text-sm text-gray-500">Recommended size: 200x200 pixels</p>
-              </div>
-              
-              <Separator />
-              
-              <div className="flex justify-end">
-                <Button onClick={saveRestaurantSettings}>
-                  Save Changes
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
-              </div>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="receipt" className="space-y-4">
+        <TabsContent value="security">
           <Card>
             <CardHeader>
-              <CardTitle>Receipt Settings</CardTitle>
-              <CardDescription>
-                Customize how receipts are displayed and printed
-              </CardDescription>
+              <CardTitle>Change Password</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="show-logo">Show Logo on Receipt</Label>
-                  <p className="text-sm text-gray-500">Display your restaurant logo on printed receipts</p>
+            <CardContent>
+              <form onSubmit={handlePasswordChange} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Input 
+                    id="currentPassword" 
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter your current password"
+                    required
+                  />
                 </div>
-                <Switch
-                  id="show-logo"
-                  checked={receiptSettings.showLogo}
-                  onCheckedChange={(checked) => handleReceiptSettingChange('showLogo', checked)}
-                />
-              </div>
-              
-              <Separator />
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="show-tax-details">Show Tax Details</Label>
-                  <p className="text-sm text-gray-500">Display detailed tax breakdown on receipts</p>
+                
+                <Separator />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input 
+                    id="newPassword" 
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter your new password"
+                    minLength={6}
+                    required
+                  />
                 </div>
-                <Switch
-                  id="show-tax-details"
-                  checked={receiptSettings.showTaxDetails}
-                  onCheckedChange={(checked) => handleReceiptSettingChange('showTaxDetails', checked)}
-                />
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-2">
-                <Label htmlFor="footer-text">Receipt Footer Text</Label>
-                <Input
-                  id="footer-text"
-                  value={receiptSettings.footerText}
-                  onChange={(e) => handleReceiptSettingChange('footerText', e.target.value)}
-                  placeholder="Thank you message"
-                />
-                <p className="text-sm text-gray-500">This text will appear at the bottom of each receipt</p>
-              </div>
-              
-              <Separator />
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="print-automatically">Print Automatically</Label>
-                  <p className="text-sm text-gray-500">Automatically print receipt after completing a transaction</p>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input 
+                    id="confirmPassword" 
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm your new password"
+                    minLength={6}
+                    required
+                  />
                 </div>
-                <Switch
-                  id="print-automatically"
-                  checked={receiptSettings.printAutomatically}
-                  onCheckedChange={(checked) => handleReceiptSettingChange('printAutomatically', checked)}
-                />
-              </div>
-              
-              <Separator />
-              
-              <div className="flex items-center space-x-4">
-                <Printer className="h-5 w-5 text-gray-500" />
-                <div>
-                  <h4 className="font-medium">Printer Configuration</h4>
-                  <p className="text-sm text-gray-500">Configure receipt printer settings</p>
-                </div>
-                <Button variant="outline" size="sm" className="ml-auto">
-                  Configure Printer
+                
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? 'Updating...' : 'Update Password'}
                 </Button>
-              </div>
-              
-              <Separator />
-              
-              <div className="flex justify-end">
-                <Button onClick={saveReceiptSettings}>
-                  Save Changes
-                </Button>
-              </div>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>

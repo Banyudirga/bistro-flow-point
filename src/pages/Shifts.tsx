@@ -1,475 +1,448 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Clock, DollarSign, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Clock, CalendarDays, Plus } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { format, differenceInHours, differenceInMinutes } from 'date-fns';
 
-// Types for shift data
-interface SalesCategory {
-  name: string;
-  amount: number;
-}
-
+// Define shift types
 interface Shift {
   id: string;
-  startTime: string;
-  endTime: string | null;
-  cashier: string;
-  totalSales: number;
-  transactionCount: number;
-  salesByCategory: SalesCategory[];
-  cashDrawerStart: number;
-  cashDrawerEnd: number | null;
-  status: 'active' | 'closed';
+  user_id: string;
+  start_time: string;
+  end_time: string | null;
+  starting_cash: number;
+  ending_cash: number | null;
+  total_sales: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  profile?: {
+    first_name: string | null;
+    last_name: string | null;
+  };
 }
 
-// Mock shift data
-const MOCK_SHIFTS: Shift[] = [
-  {
-    id: 'S12345',
-    startTime: '2023-05-15 08:00 AM',
-    endTime: '2023-05-15 04:00 PM',
-    cashier: 'Bob Cashier',
-    totalSales: 523.45,
-    transactionCount: 32,
-    salesByCategory: [
-      { name: 'Food', amount: 350.25 },
-      { name: 'Drinks', amount: 120.75 },
-      { name: 'Desserts', amount: 52.45 }
-    ],
-    cashDrawerStart: 200.00,
-    cashDrawerEnd: 450.50,
-    status: 'closed'
-  },
-  {
-    id: 'S12346',
-    startTime: '2023-05-14 08:00 AM',
-    endTime: '2023-05-14 04:00 PM',
-    cashier: 'Bob Cashier',
-    totalSales: 478.90,
-    transactionCount: 28,
-    salesByCategory: [
-      { name: 'Food', amount: 320.15 },
-      { name: 'Drinks', amount: 108.25 },
-      { name: 'Desserts', amount: 50.50 }
-    ],
-    cashDrawerStart: 200.00,
-    cashDrawerEnd: 430.25,
-    status: 'closed'
-  },
-  {
-    id: 'S12347',
-    startTime: '2023-05-16 08:00 AM',
-    endTime: null,
-    cashier: 'Bob Cashier',
-    totalSales: 215.75,
-    transactionCount: 14,
-    salesByCategory: [
-      { name: 'Food', amount: 148.50 },
-      { name: 'Drinks', amount: 52.25 },
-      { name: 'Desserts', amount: 15.00 }
-    ],
-    cashDrawerStart: 200.00,
-    cashDrawerEnd: null,
-    status: 'active'
-  }
-];
+interface ShiftFormData {
+  starting_cash: number;
+  ending_cash?: number | null;
+  notes: string;
+}
 
 const Shifts = () => {
-  const { user } = useAuth();
-  const [shifts, setShifts] = useState<Shift[]>(MOCK_SHIFTS);
-  const [currentShift, setCurrentShift] = useState<Shift | null>(null);
-  const [shiftDetailsOpen, setShiftDetailsOpen] = useState(false);
-  const [closeShiftOpen, setCloseShiftOpen] = useState(false);
-  const [cashDrawerEnd, setCashDrawerEnd] = useState<number>(0);
+  const { user, isAuthorized } = useAuth();
+  const queryClient = useQueryClient();
   
-  // Get active shift
-  const activeShift = shifts.find(shift => shift.status === 'active');
+  // State for dialogs and forms
+  const [isStartShiftOpen, setIsStartShiftOpen] = useState(false);
+  const [isEndShiftOpen, setIsEndShiftOpen] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+  const [formData, setFormData] = useState<ShiftFormData>({
+    starting_cash: 0,
+    notes: '',
+  });
   
-  // Start a new shift
-  const handleStartShift = () => {
-    if (activeShift) {
-      toast.error("There is already an active shift. Please close it first.");
+  // Get user role
+  const isManager = isAuthorized(['owner', 'manager']);
+  
+  // Fetch shifts
+  const { data: shifts, isLoading } = useQuery({
+    queryKey: ['shifts'],
+    queryFn: async () => {
+      let query = supabase
+        .from('shifts')
+        .select('*, profile:profiles(first_name, last_name)')
+        .order('start_time', { ascending: false });
+        
+      // If not manager, only show user's shifts
+      if (!isManager && user) {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data as Shift[];
+    },
+    enabled: !!user
+  });
+  
+  // Check for active shift
+  const activeShift = shifts?.find(shift => shift.user_id === user?.id && !shift.end_time) || null;
+  
+  // Start shift mutation
+  const startShiftMutation = useMutation({
+    mutationFn: async (shiftData: Pick<ShiftFormData, 'starting_cash' | 'notes'>) => {
+      const { data, error } = await supabase
+        .from('shifts')
+        .insert([{
+          user_id: user!.id,
+          starting_cash: shiftData.starting_cash,
+          notes: shiftData.notes || null
+        }])
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      toast.success('Shift started successfully');
+      setIsStartShiftOpen(false);
+    },
+    onError: (error) => {
+      toast.error(`Failed to start shift: ${(error as Error).message}`);
+    }
+  });
+  
+  // End shift mutation
+  const endShiftMutation = useMutation({
+    mutationFn: async ({ id, endData }: { id: string, endData: { ending_cash: number, notes: string } }) => {
+      // Get total sales for this shift
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('total_amount')
+        .eq('cashier_id', user!.id)
+        .gte('created_at', activeShift!.start_time)
+        .lt('created_at', new Date().toISOString());
+        
+      if (orderError) throw orderError;
+      
+      const totalSales = orderData.reduce((sum, order) => sum + order.total_amount, 0);
+      
+      const { data, error } = await supabase
+        .from('shifts')
+        .update({
+          end_time: new Date().toISOString(),
+          ending_cash: endData.ending_cash,
+          total_sales: totalSales,
+          notes: activeShift!.notes 
+            ? `${activeShift!.notes}\n\nClose notes: ${endData.notes}`.trim() 
+            : endData.notes || null
+        })
+        .eq('id', id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      toast.success('Shift ended successfully');
+      setIsEndShiftOpen(false);
+    },
+    onError: (error) => {
+      toast.error(`Failed to end shift: ${(error as Error).message}`);
+    }
+  });
+  
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'notes' ? value : parseFloat(value) || 0
+    }));
+  };
+  
+  // Handle starting a shift
+  const handleStartShift = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (formData.starting_cash < 0) {
+      toast.error('Starting cash cannot be negative');
       return;
     }
     
-    const now = new Date();
-    const timeString = now.toLocaleString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
+    startShiftMutation.mutate({
+      starting_cash: formData.starting_cash,
+      notes: formData.notes
     });
-    
-    const newShift: Shift = {
-      id: `S${Date.now().toString().slice(-5)}`,
-      startTime: timeString,
-      endTime: null,
-      cashier: `${user?.firstName} ${user?.lastName}`,
-      totalSales: 0,
-      transactionCount: 0,
-      salesByCategory: [],
-      cashDrawerStart: 200.00, // Default starting amount
-      cashDrawerEnd: null,
-      status: 'active'
-    };
-    
-    setShifts(prev => [newShift, ...prev]);
-    toast.success("Shift started successfully");
   };
   
-  // View shift details
-  const handleViewShift = (shift: Shift) => {
-    setCurrentShift(shift);
-    setShiftDetailsOpen(true);
-  };
-  
-  // Open the close shift dialog
-  const handleCloseShiftDialog = () => {
+  // Handle ending a shift
+  const handleEndShift = (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!activeShift) {
-      toast.error("No active shift to close");
+      toast.error('No active shift found');
       return;
     }
     
-    setCurrentShift(activeShift);
-    setCashDrawerEnd(activeShift.cashDrawerStart + activeShift.totalSales);
-    setCloseShiftOpen(true);
+    if (!formData.ending_cash && formData.ending_cash !== 0) {
+      toast.error('Please enter the ending cash amount');
+      return;
+    }
+    
+    endShiftMutation.mutate({
+      id: activeShift.id,
+      endData: {
+        ending_cash: formData.ending_cash!,
+        notes: formData.notes
+      }
+    });
   };
   
-  // Close the shift
-  const handleCloseShift = () => {
-    if (!currentShift) return;
-    
-    const now = new Date();
-    const timeString = now.toLocaleString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-    
-    setShifts(prev => prev.map(shift => 
-      shift.id === currentShift.id 
-        ? { 
-            ...shift, 
-            endTime: timeString, 
-            cashDrawerEnd: cashDrawerEnd,
-            status: 'closed' 
-          } 
-        : shift
-    ));
-    
-    toast.success("Shift closed successfully");
-    setCloseShiftOpen(false);
+  // Format date
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Current';
+    try {
+      return format(new Date(dateString), 'MMM dd, yyyy h:mm a');
+    } catch (error) {
+      return dateString;
+    }
   };
+  
+  // Calculate shift duration
+  const calculateDuration = (start: string, end: string | null) => {
+    if (!end) return 'In progress';
+    
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    
+    const hours = differenceInHours(endDate, startDate);
+    const minutes = differenceInMinutes(endDate, startDate) % 60;
+    
+    return `${hours}h ${minutes}m`;
+  };
+  
+  // Check if user is authenticated
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
   
   return (
-    <div className="h-full">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold flex items-center">
-          <Clock className="mr-2 h-6 w-6" />
-          Shift Management
-        </h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Shift Management</h1>
         
-        <div className="flex gap-3">
-          {activeShift ? (
-            <Button 
-              variant="destructive" 
-              onClick={handleCloseShiftDialog}
-            >
-              Close Current Shift
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleStartShift}
-            >
-              Start New Shift
-            </Button>
-          )}
-        </div>
+        {!activeShift ? (
+          <Button onClick={() => {
+            setFormData({ starting_cash: 0, notes: '' });
+            setIsStartShiftOpen(true);
+          }}>
+            <Clock className="mr-2 h-4 w-4" />
+            Start Shift
+          </Button>
+        ) : (
+          <Button onClick={() => {
+            setFormData({ 
+              starting_cash: activeShift.starting_cash,
+              ending_cash: 0,
+              notes: ''
+            });
+            setIsEndShiftOpen(true);
+          }}>
+            <Clock className="mr-2 h-4 w-4" />
+            End Current Shift
+          </Button>
+        )}
       </div>
       
       {activeShift && (
-        <Card className="mb-6 border-green-200 bg-green-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center text-green-700">
-              <Clock className="mr-2 h-5 w-5" />
-              Active Shift
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <div className="text-sm text-gray-500">Started</div>
-                <div className="font-semibold">{activeShift.startTime}</div>
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-green-700">Active Shift</h3>
+                <p className="text-sm text-green-600">
+                  Started at {formatDate(activeShift.start_time)}
+                </p>
+                <p className="text-sm text-green-600">
+                  Starting cash: ${activeShift.starting_cash.toFixed(2)}
+                </p>
               </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <div className="text-sm text-gray-500">Cashier</div>
-                <div className="font-semibold">{activeShift.cashier}</div>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center">
-                <DollarSign className="h-8 w-8 text-green-600 mr-2" />
-                <div>
-                  <div className="text-sm text-gray-500">Sales</div>
-                  <div className="font-semibold">${activeShift.totalSales.toFixed(2)}</div>
-                </div>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm flex items-center">
-                <Users className="h-8 w-8 text-blue-600 mr-2" />
-                <div>
-                  <div className="text-sm text-gray-500">Transactions</div>
-                  <div className="font-semibold">{activeShift.transactionCount}</div>
-                </div>
-              </div>
+              <Button
+                className="mt-4 sm:mt-0"
+                onClick={() => {
+                  setFormData({ 
+                    starting_cash: activeShift.starting_cash,
+                    ending_cash: 0,
+                    notes: ''
+                  });
+                  setIsEndShiftOpen(true);
+                }}
+              >
+                End Shift
+              </Button>
             </div>
           </CardContent>
         </Card>
       )}
       
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Shift History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Shift ID</TableHead>
-                <TableHead>Start Time</TableHead>
-                <TableHead>End Time</TableHead>
-                <TableHead>Cashier</TableHead>
-                <TableHead>Sales</TableHead>
-                <TableHead>Transactions</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {shifts.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center p-8">Loading shifts...</div>
+      ) : (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle>Shift History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                    No shifts found
-                  </TableCell>
+                  {isManager && <TableHead>Employee</TableHead>}
+                  <TableHead>Start Time</TableHead>
+                  <TableHead>End Time</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Starting Cash</TableHead>
+                  <TableHead>Ending Cash</TableHead>
+                  <TableHead>Total Sales</TableHead>
+                  <TableHead>Notes</TableHead>
                 </TableRow>
-              ) : (
-                shifts.map(shift => (
-                  <TableRow key={shift.id}>
-                    <TableCell className="font-medium">{shift.id}</TableCell>
-                    <TableCell>{shift.startTime}</TableCell>
-                    <TableCell>{shift.endTime || "Active"}</TableCell>
-                    <TableCell>{shift.cashier}</TableCell>
-                    <TableCell>${shift.totalSales.toFixed(2)}</TableCell>
-                    <TableCell>{shift.transactionCount}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        shift.status === 'active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {shift.status === 'active' ? 'Active' : 'Closed'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewShift(shift)}
-                      >
-                        View Details
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {shifts && shifts.length > 0 ? (
+                  shifts.map(shift => (
+                    <TableRow key={shift.id}>
+                      {isManager && (
+                        <TableCell className="font-medium">
+                          {shift.profile ? `${shift.profile.first_name || ''} ${shift.profile.last_name || ''}` : 'Unknown'}
+                        </TableCell>
+                      )}
+                      <TableCell>{formatDate(shift.start_time)}</TableCell>
+                      <TableCell>{formatDate(shift.end_time)}</TableCell>
+                      <TableCell>{calculateDuration(shift.start_time, shift.end_time)}</TableCell>
+                      <TableCell>${shift.starting_cash.toFixed(2)}</TableCell>
+                      <TableCell>{shift.ending_cash ? `$${shift.ending_cash.toFixed(2)}` : 'N/A'}</TableCell>
+                      <TableCell>{shift.total_sales ? `$${shift.total_sales.toFixed(2)}` : 'N/A'}</TableCell>
+                      <TableCell className="truncate max-w-[200px]">
+                        {shift.notes || 'No notes'}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={isManager ? 8 : 7} className="text-center py-6">
+                      No shifts found.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
       
-      {/* Shift Details Dialog */}
-      <Dialog open={shiftDetailsOpen} onOpenChange={setShiftDetailsOpen}>
-        <DialogContent className="max-w-md">
+      {/* Start Shift Dialog */}
+      <Dialog open={isStartShiftOpen} onOpenChange={setIsStartShiftOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Shift Details</DialogTitle>
+            <DialogTitle>Start New Shift</DialogTitle>
           </DialogHeader>
           
-          {currentShift && (
-            <div className="py-4">
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <div className="text-sm text-gray-500">Shift ID</div>
-                  <div className="font-medium">{currentShift.id}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Status</div>
-                  <div className="font-medium capitalize">{currentShift.status}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Start Time</div>
-                  <div className="font-medium">{currentShift.startTime}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">End Time</div>
-                  <div className="font-medium">{currentShift.endTime || "Active"}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Cashier</div>
-                  <div className="font-medium">{currentShift.cashier}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Transactions</div>
-                  <div className="font-medium">{currentShift.transactionCount}</div>
-                </div>
+          <form onSubmit={handleStartShift}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="starting_cash">Starting Cash ($)</Label>
+                <Input
+                  id="starting_cash"
+                  name="starting_cash"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.starting_cash}
+                  onChange={handleInputChange}
+                  placeholder="0.00"
+                  required
+                />
+                <p className="text-sm text-gray-500">
+                  Enter the amount of cash in the register at the start of your shift.
+                </p>
               </div>
               
-              <div className="bg-gray-50 p-3 rounded-md mb-4">
-                <div className="text-sm font-medium mb-2">Sales Summary</div>
-                <div className="flex justify-between font-medium">
-                  <span>Total Sales:</span>
-                  <span>${currentShift.totalSales.toFixed(2)}</span>
-                </div>
-                
-                {currentShift.salesByCategory.length > 0 && (
-                  <div className="mt-2 pt-2 border-t">
-                    <div className="text-xs text-gray-500 mb-1">Sales by Category</div>
-                    {currentShift.salesByCategory.map((category, index) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>{category.name}:</span>
-                        <span>${category.amount.toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              <div className="bg-gray-50 p-3 rounded-md">
-                <div className="text-sm font-medium mb-2">Cash Drawer</div>
-                <div className="flex justify-between text-sm">
-                  <span>Starting Amount:</span>
-                  <span>${currentShift.cashDrawerStart.toFixed(2)}</span>
-                </div>
-                {currentShift.cashDrawerEnd !== null && (
-                  <>
-                    <div className="flex justify-between text-sm">
-                      <span>Ending Amount:</span>
-                      <span>${currentShift.cashDrawerEnd.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between font-medium mt-1 pt-1 border-t">
-                      <span>Difference:</span>
-                      <span>${(currentShift.cashDrawerEnd - currentShift.cashDrawerStart).toFixed(2)}</span>
-                    </div>
-                  </>
-                )}
+              <div className="grid gap-2">
+                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  placeholder="Any notes about this shift"
+                  className="min-h-[100px]"
+                />
               </div>
             </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShiftDetailsOpen(false)}>
-              Close
-            </Button>
-          </DialogFooter>
+            
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setIsStartShiftOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Start Shift
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
       
-      {/* Close Shift Dialog */}
-      <Dialog open={closeShiftOpen} onOpenChange={setCloseShiftOpen}>
+      {/* End Shift Dialog */}
+      <Dialog open={isEndShiftOpen} onOpenChange={setIsEndShiftOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Close Shift</DialogTitle>
+            <DialogTitle>End Current Shift</DialogTitle>
           </DialogHeader>
           
-          {currentShift && (
-            <div className="py-4">
-              <div className="mb-4">
-                <div className="text-sm text-gray-500 mb-1">Shift Information</div>
-                <div className="bg-gray-50 p-3 rounded-md">
-                  <div className="grid grid-cols-2 gap-y-2">
-                    <div className="text-sm">Shift ID:</div>
-                    <div className="text-sm font-medium">{currentShift.id}</div>
-                    
-                    <div className="text-sm">Started:</div>
-                    <div className="text-sm font-medium">{currentShift.startTime}</div>
-                    
-                    <div className="text-sm">Cashier:</div>
-                    <div className="text-sm font-medium">{currentShift.cashier}</div>
+          <form onSubmit={handleEndShift}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Starting Cash</Label>
+                  <div className="p-2 border rounded-md bg-gray-50">
+                    ${activeShift?.starting_cash.toFixed(2) || '0.00'}
                   </div>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="ending_cash">Ending Cash ($)</Label>
+                  <Input
+                    id="ending_cash"
+                    name="ending_cash"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.ending_cash || ''}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    required
+                  />
                 </div>
               </div>
               
-              <div className="mb-4">
-                <div className="text-sm text-gray-500 mb-1">Sales Summary</div>
-                <div className="bg-gray-50 p-3 rounded-md">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Total Sales:</span>
-                    <span className="text-sm font-medium">${currentShift.totalSales.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Transactions:</span>
-                    <span className="text-sm font-medium">{currentShift.transactionCount}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <div className="text-sm text-gray-500 mb-1">Cash Drawer</div>
-                <div className="bg-gray-50 p-3 rounded-md">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm">Starting Amount:</span>
-                    <span className="text-sm font-medium">${currentShift.cashDrawerStart.toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="flex justify-between mb-2">
-                    <label htmlFor="cashDrawerEnd" className="text-sm">Ending Amount:</label>
-                    <input
-                      id="cashDrawerEnd"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={cashDrawerEnd}
-                      onChange={(e) => setCashDrawerEnd(parseFloat(e.target.value) || 0)}
-                      className="w-24 px-2 py-1 text-right border rounded"
-                    />
-                  </div>
-                  
-                  <div className="flex justify-between pt-2 border-t">
-                    <span className="text-sm font-medium">Expected:</span>
-                    <span className="text-sm font-medium">
-                      ${(currentShift.cashDrawerStart + currentShift.totalSales).toFixed(2)}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Difference:</span>
-                    <span className={`text-sm font-medium ${
-                      cashDrawerEnd !== (currentShift.cashDrawerStart + currentShift.totalSales) 
-                        ? 'text-red-500' 
-                        : ''
-                    }`}>
-                      ${(cashDrawerEnd - (currentShift.cashDrawerStart + currentShift.totalSales)).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="notes">Closing Notes (Optional)</Label>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  placeholder="Any notes about closing the shift"
+                  className="min-h-[100px]"
+                />
               </div>
             </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCloseShiftOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCloseShift}>
-              Close Shift
-            </Button>
-          </DialogFooter>
+            
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setIsEndShiftOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                End Shift
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

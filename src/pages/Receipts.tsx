@@ -1,200 +1,254 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileText, Search, Printer } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
 
-// Types for receipt data
-interface ReceiptItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
+// Define receipt and order item types
 interface Receipt {
   id: string;
-  items: ReceiptItem[];
-  total: number;
-  date: string;
-  time: string;
-  paymentMethod: string;
-  cashier: string;
+  order_number: string;
+  total_amount: number;
+  payment_method: string;
+  created_at: string;
+  customer_name: string | null;
+  status: string;
+  cashier: {
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
+  items: OrderItem[];
 }
 
-// Mock receipt data
-const MOCK_RECEIPTS: Receipt[] = [
-  {
-    id: 'R123456',
-    items: [
-      { id: '1', name: 'Burger', price: 8.99, quantity: 2 },
-      { id: '7', name: 'Soda', price: 2.99, quantity: 2 }
-    ],
-    total: 23.96,
-    date: '2023-05-15',
-    time: '12:30 PM',
-    paymentMethod: 'cash',
-    cashier: 'Bob Cashier'
-  },
-  {
-    id: 'R123457',
-    items: [
-      { id: '2', name: 'Pizza', price: 12.99, quantity: 1 },
-      { id: '8', name: 'Juice', price: 3.99, quantity: 1 }
-    ],
-    total: 16.98,
-    date: '2023-05-15',
-    time: '01:15 PM',
-    paymentMethod: 'card',
-    cashier: 'Bob Cashier'
-  },
-  {
-    id: 'R123458',
-    items: [
-      { id: '5', name: 'Pasta', price: 10.99, quantity: 1 },
-      { id: '11', name: 'Cake', price: 5.99, quantity: 1 },
-      { id: '9', name: 'Coffee', price: 3.49, quantity: 1 }
-    ],
-    total: 20.47,
-    date: '2023-05-14',
-    time: '07:45 PM',
-    paymentMethod: 'card',
-    cashier: 'Bob Cashier'
-  },
-  {
-    id: 'R123459',
-    items: [
-      { id: '3', name: 'Salad', price: 7.99, quantity: 1 },
-      { id: '10', name: 'Tea', price: 2.99, quantity: 1 }
-    ],
-    total: 10.98,
-    date: '2023-05-14',
-    time: '12:10 PM',
-    paymentMethod: 'cash',
-    cashier: 'Bob Cashier'
-  },
-  {
-    id: 'R123460',
-    items: [
-      { id: '4', name: 'Steak', price: 18.99, quantity: 1 },
-      { id: '13', name: 'French Fries', price: 3.99, quantity: 1 },
-      { id: '7', name: 'Soda', price: 2.99, quantity: 1 }
-    ],
-    total: 25.97,
-    date: '2023-05-13',
-    time: '08:30 PM',
-    paymentMethod: 'card',
-    cashier: 'Bob Cashier'
-  }
-];
+interface OrderItem {
+  id: string;
+  menu_item: {
+    name: string;
+  };
+  quantity: number;
+  unit_price: number;
+  notes: string | null;
+}
 
 const Receipts = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [currentReceipt, setCurrentReceipt] = useState<Receipt | null>(null);
+  const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  // Filter receipts based on search term
-  const filteredReceipts = MOCK_RECEIPTS.filter(receipt => 
-    receipt.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    receipt.date.includes(searchTerm) ||
-    receipt.paymentMethod.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    receipt.cashier.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Fetch receipts with order items
+  const { data: receipts, isLoading, error } = useQuery({
+    queryKey: ['receipts'],
+    queryFn: async () => {
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select(`
+          id, 
+          order_number, 
+          total_amount, 
+          payment_method, 
+          created_at, 
+          customer_name,
+          status,
+          cashier:profiles(first_name, last_name)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (ordersError) throw ordersError;
+      
+      // For each order, fetch its items
+      const receiptsWithItems = await Promise.all(
+        orders.map(async (order) => {
+          const { data: items, error: itemsError } = await supabase
+            .from('order_items')
+            .select(`
+              id,
+              quantity,
+              unit_price,
+              notes,
+              menu_item:menu_items(name)
+            `)
+            .eq('order_id', order.id);
+            
+          if (itemsError) throw itemsError;
+          
+          return {
+            ...order,
+            items: items
+          };
+        })
+      );
+      
+      return receiptsWithItems as Receipt[];
+    }
+  });
   
-  const handleViewDetails = (receipt: Receipt) => {
-    setCurrentReceipt(receipt);
-    setDetailsOpen(true);
+  // Filter receipts based on search query
+  const filteredReceipts = receipts?.filter(receipt => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      receipt.order_number.toLowerCase().includes(query) ||
+      (receipt.customer_name && receipt.customer_name.toLowerCase().includes(query)) ||
+      (receipt.cashier?.first_name && receipt.cashier.first_name.toLowerCase().includes(query)) ||
+      (receipt.cashier?.last_name && receipt.cashier.last_name.toLowerCase().includes(query))
+    );
+  });
+  
+  // View receipt details
+  const handleViewReceipt = (receipt: Receipt) => {
+    setSelectedReceipt(receipt);
+    setIsDialogOpen(true);
   };
   
+  // Print receipt
   const handlePrintReceipt = () => {
     window.print();
-    toast.success("Receipt printed");
+    toast.success('Receipt printed');
   };
   
+  // Format date
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM dd, yyyy h:mm a');
+    } catch (error) {
+      return dateString;
+    }
+  };
+  
+  // Check if user is authenticated
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
   return (
-    <div className="h-full">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold flex items-center">
-          <FileText className="mr-2 h-6 w-6" />
-          Receipt History
-        </h1>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-2xl font-bold">Receipt History</h1>
         
         <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
           <Input
-            type="search"
             placeholder="Search receipts..."
-            className="pl-9 w-[250px]"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8 w-full sm:w-64"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
       
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Recent Receipts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Receipt #</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Cashier</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredReceipts.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center p-8">Loading receipts...</div>
+      ) : error ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-red-500">
+              Error loading receipts: {(error as Error).message}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle>All Receipts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                    No receipts found
-                  </TableCell>
+                  <TableHead>Receipt #</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Payment Method</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Cashier</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredReceipts.map(receipt => (
-                  <TableRow key={receipt.id}>
-                    <TableCell className="font-medium">{receipt.id}</TableCell>
-                    <TableCell>{receipt.date}</TableCell>
-                    <TableCell>{receipt.time}</TableCell>
-                    <TableCell>{receipt.items.length}</TableCell>
-                    <TableCell>${receipt.total.toFixed(2)}</TableCell>
-                    <TableCell className="capitalize">{receipt.paymentMethod}</TableCell>
-                    <TableCell>{receipt.cashier}</TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleViewDetails(receipt)}
-                      >
-                        View Details
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {filteredReceipts && filteredReceipts.length > 0 ? (
+                  filteredReceipts.map(receipt => (
+                    <TableRow key={receipt.id}>
+                      <TableCell className="font-medium">{receipt.order_number}</TableCell>
+                      <TableCell>{formatDate(receipt.created_at)}</TableCell>
+                      <TableCell>${receipt.total_amount.toFixed(2)}</TableCell>
+                      <TableCell className="capitalize">{receipt.payment_method || 'N/A'}</TableCell>
+                      <TableCell>{receipt.customer_name || 'Guest'}</TableCell>
+                      <TableCell>
+                        <span 
+                          className={`px-2 py-1 text-xs rounded-md ${
+                            receipt.status === 'completed' 
+                              ? 'bg-green-100 text-green-800' 
+                              : receipt.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {receipt.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {receipt.cashier
+                          ? `${receipt.cashier.first_name || ''} ${receipt.cashier.last_name || ''}`
+                          : 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleViewReceipt(receipt)}
+                        >
+                          <FileText className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-6">
+                      {searchQuery 
+                        ? 'No receipts found matching your search.' 
+                        : 'No receipts found.'}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
       
       {/* Receipt Details Dialog */}
-      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md print:shadow-none print:border-none">
           <DialogHeader>
-            <DialogTitle>Receipt Details</DialogTitle>
+            <DialogTitle className="flex justify-between items-center">
+              <span>Receipt Details</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="print:hidden"
+                onClick={handlePrintReceipt}
+              >
+                <Printer className="h-4 w-4 mr-1" />
+                Print
+              </Button>
+            </DialogTitle>
           </DialogHeader>
           
-          {currentReceipt && (
+          {selectedReceipt && (
             <div className="py-4">
               <div className="text-center border-b pb-2 mb-2">
                 <h3 className="font-bold text-lg">Restaurant Name</h3>
@@ -205,19 +259,27 @@ const Receipts = () => {
               <div className="border-b pb-2 mb-2">
                 <div className="flex justify-between text-sm">
                   <span>Receipt #:</span>
-                  <span>{currentReceipt.id}</span>
+                  <span>{selectedReceipt.order_number}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Date:</span>
-                  <span>{currentReceipt.date} {currentReceipt.time}</span>
+                  <span>{formatDate(selectedReceipt.created_at)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Cashier:</span>
-                  <span>{currentReceipt.cashier}</span>
+                  <span>
+                    {selectedReceipt.cashier
+                      ? `${selectedReceipt.cashier.first_name || ''} ${selectedReceipt.cashier.last_name || ''}`
+                      : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Customer:</span>
+                  <span>{selectedReceipt.customer_name || 'Guest'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Payment Method:</span>
-                  <span className="capitalize">{currentReceipt.paymentMethod}</span>
+                  <span className="capitalize">{selectedReceipt.payment_method || 'N/A'}</span>
                 </div>
               </div>
               
@@ -226,17 +288,17 @@ const Receipts = () => {
                   <span>Item</span>
                   <span>Total</span>
                 </div>
-                {currentReceipt.items.map((item, index) => (
+                {selectedReceipt.items.map((item, index) => (
                   <div key={index} className="text-sm flex justify-between">
-                    <span>{item.quantity} x {item.name}</span>
-                    <span>${(item.price * item.quantity).toFixed(2)}</span>
+                    <span>{item.quantity} x {item.menu_item.name}</span>
+                    <span>${(item.unit_price * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
               
               <div className="font-bold flex justify-between">
                 <span>Total:</span>
-                <span>${currentReceipt.total.toFixed(2)}</span>
+                <span>${selectedReceipt.total_amount.toFixed(2)}</span>
               </div>
               
               <div className="text-center mt-4 text-sm">
@@ -245,16 +307,6 @@ const Receipts = () => {
               </div>
             </div>
           )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailsOpen(false)}>
-              Close
-            </Button>
-            <Button onClick={handlePrintReceipt}>
-              <Printer className="mr-2 h-4 w-4" />
-              Print Receipt
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

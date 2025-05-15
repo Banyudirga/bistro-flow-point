@@ -9,33 +9,22 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ShoppingCart, Printer, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-// Mock data for menu items
-const CATEGORIES = [
-  { id: 'foods', name: 'Foods' },
-  { id: 'drinks', name: 'Drinks' },
-  { id: 'desserts', name: 'Desserts' },
-  { id: 'sides', name: 'Sides' },
-];
+// Define menu item and cart item types
+interface MenuItem {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  image_url: string | null;
+  description: string | null;
+  is_available: boolean | null;
+}
 
-const MENU_ITEMS = [
-  { id: '1', name: 'Burger', price: 8.99, category: 'foods', image: 'https://via.placeholder.com/80' },
-  { id: '2', name: 'Pizza', price: 12.99, category: 'foods', image: 'https://via.placeholder.com/80' },
-  { id: '3', name: 'Salad', price: 7.99, category: 'foods', image: 'https://via.placeholder.com/80' },
-  { id: '4', name: 'Steak', price: 18.99, category: 'foods', image: 'https://via.placeholder.com/80' },
-  { id: '5', name: 'Pasta', price: 10.99, category: 'foods', image: 'https://via.placeholder.com/80' },
-  { id: '6', name: 'Chicken Wings', price: 9.99, category: 'foods', image: 'https://via.placeholder.com/80' },
-  { id: '7', name: 'Soda', price: 2.99, category: 'drinks', image: 'https://via.placeholder.com/80' },
-  { id: '8', name: 'Juice', price: 3.99, category: 'drinks', image: 'https://via.placeholder.com/80' },
-  { id: '9', name: 'Coffee', price: 3.49, category: 'drinks', image: 'https://via.placeholder.com/80' },
-  { id: '10', name: 'Tea', price: 2.99, category: 'drinks', image: 'https://via.placeholder.com/80' },
-  { id: '11', name: 'Cake', price: 5.99, category: 'desserts', image: 'https://via.placeholder.com/80' },
-  { id: '12', name: 'Ice Cream', price: 4.99, category: 'desserts', image: 'https://via.placeholder.com/80' },
-  { id: '13', name: 'French Fries', price: 3.99, category: 'sides', image: 'https://via.placeholder.com/80' },
-  { id: '14', name: 'Onion Rings', price: 4.99, category: 'sides', image: 'https://via.placeholder.com/80' },
-];
-
-// Cart item type
 interface CartItem {
   id: string;
   name: string;
@@ -43,25 +32,120 @@ interface CartItem {
   quantity: number;
 }
 
-// Receipt type
+// Receipt interface
 interface Receipt {
   id: string;
   items: CartItem[];
   total: number;
   date: Date;
   paymentMethod: string;
+  orderNumber: string;
 }
 
 const Pos = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [amountPaid, setAmountPaid] = useState("");
   const [currentReceipt, setCurrentReceipt] = useState<Receipt | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
+
+  // Fetch menu items from Supabase
+  const { data: menuItems, isLoading } = useQuery({
+    queryKey: ['menuItems'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('*')
+        .order('name');
+        
+      if (error) throw error;
+      
+      // Extract unique categories
+      const uniqueCategories = Array.from(new Set((data as MenuItem[]).map(item => item.category)));
+      setCategories(uniqueCategories);
+      
+      return data as MenuItem[];
+    }
+  });
+
+  // Create order mutation
+  const createOrderMutation = useMutation({
+    mutationFn: async ({
+      orderItems,
+      total,
+      paymentMethod
+    }: {
+      orderItems: CartItem[],
+      total: number,
+      paymentMethod: string
+    }) => {
+      // Generate order number (prefix with current date + sequential number)
+      const orderNumber = `R${new Date().toISOString().slice(0, 10).replace(/-/g, '')}${Math.floor(Math.random() * 1000)}`;
+      
+      // 1. Create the order
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert([
+          {
+            order_number: orderNumber,
+            total_amount: total,
+            payment_method: paymentMethod,
+            status: 'completed',
+            cashier_id: user?.id
+          }
+        ])
+        .select()
+        .single();
+        
+      if (orderError) throw orderError;
+      
+      // 2. Create the order items
+      const orderItemsToInsert = orderItems.map(item => ({
+        order_id: orderData.id,
+        menu_item_id: item.id,
+        quantity: item.quantity,
+        unit_price: item.price
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItemsToInsert);
+        
+      if (itemsError) throw itemsError;
+      
+      return {
+        ...orderData,
+        items: orderItems,
+        date: new Date(),
+        paymentMethod: paymentMethod,
+        total: total,
+        orderNumber: orderNumber
+      };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['receipts'] });
+      setCurrentReceipt({
+        id: data.id,
+        items: cart,
+        total: calculateTotal(),
+        date: new Date(),
+        paymentMethod: paymentMethod,
+        orderNumber: data.orderNumber
+      });
+      setReceiptDialogOpen(true);
+    },
+    onError: (error) => {
+      toast.error(`Failed to create order: ${(error as Error).message}`);
+      setPaymentDialogOpen(false);
+    }
+  });
 
   // Add item to cart
-  const addToCart = (item: { id: string; name: string; price: number }) => {
+  const addToCart = (item: MenuItem) => {
     setCart(prev => {
       const existingItem = prev.find(i => i.id === item.id);
       if (existingItem) {
@@ -117,19 +201,13 @@ const Pos = () => {
       return;
     }
     
-    const receipt: Receipt = {
-      id: `R${Date.now().toString().slice(-6)}`,
-      items: [...cart],
-      total: total,
-      date: new Date(),
-      paymentMethod: paymentMethod
-    };
+    createOrderMutation.mutate({
+      orderItems: cart,
+      total,
+      paymentMethod
+    });
     
-    setCurrentReceipt(receipt);
     setPaymentDialogOpen(false);
-    setReceiptDialogOpen(true);
-    
-    // In a real app, we would save the order to the database here
   };
 
   // Print receipt
@@ -145,6 +223,11 @@ const Pos = () => {
     setAmountPaid("");
   };
 
+  // Check if user is authenticated
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <div className="h-full flex flex-col">
       <div className="text-2xl font-bold mb-4">Point of Sale</div>
@@ -154,45 +237,58 @@ const Pos = () => {
         <div className="lg:col-span-2">
           <Card className="h-full">
             <CardContent className="p-4 h-full">
-              <Tabs defaultValue="foods" className="h-full flex flex-col">
-                <TabsList className="mb-4">
-                  {CATEGORIES.map(category => (
-                    <TabsTrigger key={category.id} value={category.id}>
-                      {category.name}
-                    </TabsTrigger>
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  Loading menu items...
+                </div>
+              ) : menuItems && menuItems.length > 0 ? (
+                <Tabs defaultValue={categories[0] || "foods"} className="h-full flex flex-col">
+                  <TabsList className="mb-4">
+                    {categories.map(category => (
+                      <TabsTrigger key={category} value={category}>
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  
+                  {categories.map(category => (
+                    <TabsContent 
+                      key={category} 
+                      value={category} 
+                      className="flex-1 mt-0"
+                    >
+                      <ScrollArea className="h-[calc(100vh-220px)]">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-2">
+                          {menuItems
+                            .filter(item => item.category === category && item.is_available !== false)
+                            .map(item => (
+                              <div 
+                                key={item.id} 
+                                className="border rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors text-center"
+                                onClick={() => addToCart(item)}
+                              >
+                                <div className="flex justify-center mb-2">
+                                  <img 
+                                    src={item.image_url || 'https://via.placeholder.com/80'} 
+                                    alt={item.name} 
+                                    className="w-20 h-20 object-cover rounded"
+                                  />
+                                </div>
+                                <div className="font-medium">{item.name}</div>
+                                <div className="text-green-600">${item.price.toFixed(2)}</div>
+                              </div>
+                            ))}
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
                   ))}
-                </TabsList>
-                
-                {CATEGORIES.map(category => (
-                  <TabsContent 
-                    key={category.id} 
-                    value={category.id} 
-                    className="flex-1 mt-0"
-                  >
-                    <ScrollArea className="h-[calc(100vh-220px)]">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-2">
-                        {MENU_ITEMS.filter(item => item.category === category.id).map(item => (
-                          <div 
-                            key={item.id} 
-                            className="border rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors text-center"
-                            onClick={() => addToCart(item)}
-                          >
-                            <div className="flex justify-center mb-2">
-                              <img 
-                                src={item.image} 
-                                alt={item.name} 
-                                className="w-20 h-20 object-cover rounded"
-                              />
-                            </div>
-                            <div className="font-medium">{item.name}</div>
-                            <div className="text-green-600">${item.price.toFixed(2)}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </TabsContent>
-                ))}
-              </Tabs>
+                </Tabs>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <p>No menu items found.</p>
+                  <p className="text-sm">Add menu items in the inventory page.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -364,7 +460,7 @@ const Pos = () => {
       
       {/* Receipt Dialog */}
       <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md print:shadow-none print:border-none">
           <DialogHeader>
             <DialogTitle>Receipt</DialogTitle>
           </DialogHeader>
@@ -380,7 +476,7 @@ const Pos = () => {
               <div className="border-b pb-2 mb-2">
                 <div className="flex justify-between text-sm">
                   <span>Receipt #:</span>
-                  <span>{currentReceipt.id}</span>
+                  <span>{currentReceipt.orderNumber}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Date:</span>

@@ -9,6 +9,159 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      inventory_items: {
+        Row: {
+          cost_price: number
+          created_at: string
+          id: string
+          name: string
+          quantity: number
+          threshold_quantity: number | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          cost_price: number
+          created_at?: string
+          id?: string
+          name: string
+          quantity?: number
+          threshold_quantity?: number | null
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          cost_price?: number
+          created_at?: string
+          id?: string
+          name?: string
+          quantity?: number
+          threshold_quantity?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      menu_items: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_available: boolean | null
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          name: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          menu_item_id: string
+          notes: string | null
+          order_id: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          menu_item_id: string
+          notes?: string | null
+          order_id: string
+          quantity: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          menu_item_id?: string
+          notes?: string | null
+          order_id?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          cashier_id: string | null
+          created_at: string
+          customer_name: string | null
+          id: string
+          order_number: string
+          payment_method: string | null
+          status: string
+          table_number: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          cashier_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          order_number: string
+          payment_method?: string | null
+          status?: string
+          table_number?: string | null
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          cashier_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          order_number?: string
+          payment_method?: string | null
+          status?: string
+          table_number?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -36,6 +189,45 @@ export type Database = {
           last_name?: string | null
           role?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      shifts: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          ending_cash: number | null
+          id: string
+          notes: string | null
+          start_time: string
+          starting_cash: number
+          total_sales: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          ending_cash?: number | null
+          id?: string
+          notes?: string | null
+          start_time?: string
+          starting_cash?: number
+          total_sales?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          ending_cash?: number | null
+          id?: string
+          notes?: string | null
+          start_time?: string
+          starting_cash?: number
+          total_sales?: number | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
