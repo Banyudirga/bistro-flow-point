@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -182,6 +181,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (profileErr) {
           console.error('Error fetching profile after login:', profileErr);
         }
+        
+        return true; // Return success to indicate login was successful
       }
     } catch (error: any) {
       console.error('Login error:', error);

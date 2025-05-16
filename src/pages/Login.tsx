@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Navigate, useLocation } from 'react-router-dom';
@@ -70,8 +71,8 @@ const Login = () => {
     try {
       await signIn(email, password);
       
-      // Explicitly navigate to the POS page after successful login
-      navigate('/pos', { replace: true });
+      // Force the navigation to the POS page
+      window.location.href = '/pos';
     } catch (error) {
       // Error handling is done in the auth context
       setIsLoading(false);
