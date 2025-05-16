@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate, Navigate, useLocation } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,7 +18,6 @@ const Login = () => {
   const [lastName, setLastName] = useState('');
   const { user, signIn } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   
   // If already logged in, redirect to main page
   if (user) {
@@ -69,14 +68,25 @@ const Login = () => {
     
     setIsLoading(true);
     try {
-      const success = await signIn(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      if (success) {
-        // Force the navigation to the POS page
+      if (error) {
+        toast.error(error.message || 'Login failed. Please check your credentials.');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (data.user) {
+        toast.success(`Welcome back, ${data.user.email}`);
+        // Force a full page reload/redirect to POS page
         window.location.href = '/pos';
       }
-    } catch (error) {
-      // Error handling is done in the auth context
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error(error.message || 'Login failed. Please check your credentials.');
       setIsLoading(false);
     }
   };

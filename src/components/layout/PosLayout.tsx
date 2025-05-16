@@ -1,26 +1,34 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarProvider, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { ShoppingCart, Package, Clock, FileText, User, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 
 export const PosLayout: React.FC = () => {
-  const { user, isAuthorized, signOut } = useAuth();
+  const { user, loading, isAuthorized, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
+  // Wait for auth state to be determined before redirecting
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <p>Loading...</p>
+    </div>;
+  }
+  
   // If no user is logged in, redirect to login
   if (!user) {
+    console.log("No user found, redirecting to login");
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    // Force full page navigation on sign out
+    window.location.href = '/login';
   };
 
   return (
