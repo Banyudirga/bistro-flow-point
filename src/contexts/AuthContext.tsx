@@ -161,6 +161,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (data.user) {
         toast.success(`Welcome back, ${data.user.email}`);
+        
+        // Fetch user profile immediately after login to ensure data is available
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+            
+          if (!profileError && profileData) {
+            setUser({
+              id: data.user.id,
+              email: data.user.email || '',
+              firstName: profileData.first_name || '',
+              lastName: profileData.last_name || '',
+              role: profileData.role as UserRole || 'cashier'
+            });
+          }
+        } catch (profileErr) {
+          console.error('Error fetching profile after login:', profileErr);
+        }
       }
     } catch (error: any) {
       console.error('Login error:', error);
