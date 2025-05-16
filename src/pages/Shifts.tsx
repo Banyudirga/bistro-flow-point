@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Clock, CalendarDays, Plus } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, differenceInHours, differenceInMinutes } from 'date-fns';
@@ -41,8 +40,7 @@ interface ShiftFormData {
   notes: string;
 }
 
-// Define allowed user roles
-type UserRole = 'owner' | 'manager' | 'cashier' | 'waiter';
+// Remove the local UserRole type definition since we're importing it from AuthContext
 
 const Shifts = () => {
   const { user, isAuthorized } = useAuth();
@@ -57,8 +55,8 @@ const Shifts = () => {
     notes: '',
   });
   
-  // Get user role - use proper type for the role array
-  const isManager = isAuthorized(['owner', 'manager'] as UserRole[]);
+  // Update the roles array to match the UserRole type from AuthContext
+  const isManager = isAuthorized(['owner'] as UserRole[]);
   
   // Fetch shifts
   const { data: shifts, isLoading } = useQuery({
