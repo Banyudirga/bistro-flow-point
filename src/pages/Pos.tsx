@@ -153,7 +153,12 @@ const Pos = () => {
           i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         );
       } else {
-        return [...prev, { ...item, quantity: 1 }];
+        return [...prev, { 
+          id: item.id, 
+          name: item.name, 
+          price: item.price, 
+          quantity: 1 
+        }];
       }
     });
     
@@ -350,7 +355,13 @@ const Pos = () => {
                               variant="outline" 
                               size="icon" 
                               className="h-7 w-7"
-                              onClick={() => addToCart(item)}
+                              onClick={() => {
+                                // Find the original menu item to add to cart
+                                const menuItem = menuItems?.find(mi => mi.id === item.id);
+                                if (menuItem) {
+                                  addToCart(menuItem);
+                                }
+                              }}
                             >
                               +
                             </Button>

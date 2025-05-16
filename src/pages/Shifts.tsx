@@ -16,6 +16,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, differenceInHours, differenceInMinutes } from 'date-fns';
 
 // Define shift types
+interface ShiftProfile {
+  first_name: string | null;
+  last_name: string | null;
+}
+
 interface Shift {
   id: string;
   user_id: string;
@@ -27,10 +32,7 @@ interface Shift {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  profile?: {
-    first_name: string | null;
-    last_name: string | null;
-  };
+  profile?: ShiftProfile | null;
 }
 
 interface ShiftFormData {

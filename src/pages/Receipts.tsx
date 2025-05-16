@@ -14,6 +14,16 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 
 // Define receipt and order item types
+interface OrderItem {
+  id: string;
+  menu_item: {
+    name: string;
+  };
+  quantity: number;
+  unit_price: number;
+  notes: string | null;
+}
+
 interface Receipt {
   id: string;
   order_number: string;
@@ -27,16 +37,6 @@ interface Receipt {
     last_name: string | null;
   } | null;
   items: OrderItem[];
-}
-
-interface OrderItem {
-  id: string;
-  menu_item: {
-    name: string;
-  };
-  quantity: number;
-  unit_price: number;
-  notes: string | null;
 }
 
 const Receipts = () => {
@@ -84,11 +84,11 @@ const Receipts = () => {
           return {
             ...order,
             items: items
-          };
+          } as Receipt;  // Use type assertion to fix the conversion
         })
       );
       
-      return receiptsWithItems as Receipt[];
+      return receiptsWithItems;
     }
   });
   
