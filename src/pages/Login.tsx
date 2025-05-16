@@ -69,10 +69,12 @@ const Login = () => {
     
     setIsLoading(true);
     try {
-      await signIn(email, password);
+      const success = await signIn(email, password);
       
-      // Force the navigation to the POS page
-      window.location.href = '/pos';
+      if (success) {
+        // Force the navigation to the POS page
+        window.location.href = '/pos';
+      }
     } catch (error) {
       // Error handling is done in the auth context
       setIsLoading(false);

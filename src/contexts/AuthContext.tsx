@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -18,7 +19,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<boolean>; // Updated return type to boolean
   signOut: () => Promise<void>;
   isAuthorized: (allowedRoles: UserRole[]) => boolean;
 }
@@ -140,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Sign in function with Supabase
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
     try {
       // Clean up existing state and attempt global sign out first
@@ -184,6 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         return true; // Return success to indicate login was successful
       }
+      return false; // Return false if no user data
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || 'Login failed. Please check your credentials.');
