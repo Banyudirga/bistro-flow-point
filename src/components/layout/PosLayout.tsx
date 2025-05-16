@@ -38,7 +38,7 @@ export const PosLayout: React.FC = () => {
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/pos'}>
                       <Button 
                         variant="ghost" 
                         className={cn("w-full justify-start", location.pathname === '/pos' && "bg-accent text-accent-foreground")}
@@ -52,7 +52,7 @@ export const PosLayout: React.FC = () => {
                   
                   {isAuthorized(['owner', 'warehouse_admin']) && (
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/inventory'}>
                         <Button 
                           variant="ghost" 
                           className={cn("w-full justify-start", location.pathname === '/inventory' && "bg-accent text-accent-foreground")}
@@ -66,7 +66,7 @@ export const PosLayout: React.FC = () => {
                   )}
                   
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/receipts'}>
                       <Button 
                         variant="ghost" 
                         className={cn("w-full justify-start", location.pathname === '/receipts' && "bg-accent text-accent-foreground")}
@@ -79,7 +79,7 @@ export const PosLayout: React.FC = () => {
                   </SidebarMenuItem>
                   
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/shifts'}>
                       <Button 
                         variant="ghost" 
                         className={cn("w-full justify-start", location.pathname === '/shifts' && "bg-accent text-accent-foreground")}
@@ -93,7 +93,7 @@ export const PosLayout: React.FC = () => {
                   
                   {isAuthorized(['owner']) && (
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/settings'}>
                         <Button 
                           variant="ghost" 
                           className={cn("w-full justify-start", location.pathname === '/settings' && "bg-accent text-accent-foreground")}
@@ -108,7 +108,7 @@ export const PosLayout: React.FC = () => {
                   
                   {isAuthorized(['owner']) && (
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/users'}>
                         <Button 
                           variant="ghost" 
                           className={cn("w-full justify-start", location.pathname === '/users' && "bg-accent text-accent-foreground")}
