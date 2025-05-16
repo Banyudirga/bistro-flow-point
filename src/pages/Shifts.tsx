@@ -41,6 +41,9 @@ interface ShiftFormData {
   notes: string;
 }
 
+// Define allowed user roles
+type UserRole = 'owner' | 'manager' | 'cashier' | 'waiter';
+
 const Shifts = () => {
   const { user, isAuthorized } = useAuth();
   const queryClient = useQueryClient();
@@ -54,8 +57,8 @@ const Shifts = () => {
     notes: '',
   });
   
-  // Get user role
-  const isManager = isAuthorized(['owner', 'manager']);
+  // Get user role - use proper type for the role array
+  const isManager = isAuthorized(['owner', 'manager'] as UserRole[]);
   
   // Fetch shifts
   const { data: shifts, isLoading } = useQuery({
@@ -74,7 +77,15 @@ const Shifts = () => {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as Shift[];
+      
+      // Transform data to match Shift interface
+      return data.map(shift => ({
+        ...shift,
+        // Handle potential error responses in profile
+        profile: shift.profile && !('error' in shift.profile) 
+          ? shift.profile 
+          : null
+      })) as Shift[];
     },
     enabled: !!user
   });

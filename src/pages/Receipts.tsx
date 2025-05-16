@@ -24,6 +24,7 @@ interface OrderItem {
   notes: string | null;
 }
 
+// Updated Receipt interface to make nullable types explicit
 interface Receipt {
   id: string;
   order_number: string;
@@ -81,10 +82,15 @@ const Receipts = () => {
             
           if (itemsError) throw itemsError;
           
+          // Explicitly handle the type structure to match Receipt interface
           return {
             ...order,
-            items: items
-          } as Receipt;  // Use type assertion to fix the conversion
+            items: items || [],
+            // Ensure cashier is correctly handled with proper type structure
+            cashier: order.cashier && !('error' in order.cashier) 
+              ? order.cashier 
+              : null
+          } as Receipt;
         })
       );
       
