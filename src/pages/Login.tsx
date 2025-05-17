@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { useNavigate, Navigate } from 'react-router-dom';
@@ -6,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
-import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -33,21 +33,8 @@ const Login = () => {
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            role: 'cashier' // Default role for new users
-          }
-        }
-      });
-      
-      if (error) throw error;
-      
-      toast.success('Registration successful! Please sign in.');
+      // For now, just display a message since we're not implementing sign up
+      toast.info('Sign up is not available with local storage demo. Please use demo accounts.');
       setIsSignUp(false);
     } catch (error: any) {
       console.error('Sign up error:', error);
@@ -67,7 +54,6 @@ const Login = () => {
     
     setIsLoading(true);
     try {
-      // Use the AuthContext's signIn instead of direct Supabase call
       const success = await signIn(email, password);
       
       if (success) {

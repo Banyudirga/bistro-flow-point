@@ -1,7 +1,6 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
+import { localStorageHelper, LocalMenuItem } from '@/utils/localStorage';
 
 export interface MenuItem {
   id: string;
@@ -14,32 +13,33 @@ export interface MenuItem {
 }
 
 export const useMenuItems = () => {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  const { data: menuItems, isLoading, error } = useQuery({
-    queryKey: ['menuItems'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('menu_items')
-        .select('*')
-        .order('name');
-        
-      if (error) throw error;
-      
-      return data as MenuItem[];
-    }
-  });
-
-  // Process categories whenever menu items change
+  // Load menu items from localStorage
   useEffect(() => {
-    if (menuItems && menuItems.length > 0) {
-      const uniqueCategories = Array.from(new Set(menuItems.map(item => item.category)));
-      setCategories(uniqueCategories);
+    try {
+      const localItems = localStorageHelper.getMenuItems();
+      setMenuItems(localItems);
+      
+      // Extract categories
+      if (localItems && localItems.length > 0) {
+        const uniqueCategories = Array.from(new Set(localItems.map(item => item.category)));
+        setCategories(uniqueCategories);
+      }
+      
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Error loading menu items:', err);
+      setError(err as Error);
+      setIsLoading(false);
     }
-  }, [menuItems]);
+  }, []);
 
   return {
-    menuItems: menuItems || [],
+    menuItems,
     categories,
     isLoading,
     error
