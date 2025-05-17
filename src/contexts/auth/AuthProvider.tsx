@@ -15,9 +15,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initialize auth state and set up listeners
   useEffect(() => {
+    console.log("Setting up auth state listener");
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.email);
         setSession(currentSession);
         
         if (currentSession?.user) {
@@ -39,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
               
               if (profileData) {
+                console.log("Setting user data from profile:", profileData);
                 setUser({
                   id: currentSession.user.id,
                   email: currentSession.user.email || '',
@@ -63,6 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Checking for existing session:", currentSession?.user?.email);
       setSession(currentSession);
       
       if (currentSession?.user) {
@@ -81,6 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             
             if (profileData) {
+              console.log("Setting user from existing session:", profileData);
               setUser({
                 id: currentSession.user.id,
                 email: currentSession.user.email || '',
@@ -104,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Sign in function with Supabase
   const signIn = async (email: string, password: string): Promise<boolean> => {
+    console.log("Attempting sign in for:", email);
     setLoading(true);
     try {
       // Clean up existing state and attempt global sign out first
@@ -112,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
         // Continue even if this fails
+        console.log("Global sign out failed, continuing:", err);
       }
       
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -122,6 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       
       if (data.user) {
+        console.log("Sign in successful for:", data.user.email);
         toast.success(`Welcome back, ${data.user.email}`);
         
         // Fetch user profile immediately after login to ensure data is available
@@ -133,6 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .single();
             
           if (!profileError && profileData) {
+            console.log("Setting user from profile after login:", profileData);
             setUser({
               id: data.user.id,
               email: data.user.email || '',

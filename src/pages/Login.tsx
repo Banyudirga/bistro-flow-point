@@ -67,21 +67,16 @@ const Login = () => {
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      // Use the AuthContext's signIn instead of direct Supabase call
+      const success = await signIn(email, password);
       
-      if (error) {
-        toast.error(error.message || 'Login failed. Please check your credentials.');
-        setIsLoading(false);
-        return;
-      }
-      
-      if (data.user) {
-        toast.success(`Welcome back, ${data.user.email}`);
-        // Force a full page reload/redirect to POS page
+      if (success) {
+        console.log("Login successful, redirecting to /pos");
+        // Use window.location for a full page redirect to ensure clean state
         window.location.href = '/pos';
+      } else {
+        setIsLoading(false);
+        toast.error('Login failed. Please check your credentials.');
       }
     } catch (error: any) {
       console.error('Login error:', error);
