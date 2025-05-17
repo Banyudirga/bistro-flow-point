@@ -16,6 +16,7 @@ export interface User {
 export interface AuthContextType {
   user: User | null;
   loading: boolean;
+  initialized: boolean; // New property to track if auth has been fully initialized
   signIn: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   isAuthorized: (allowedRoles: UserRole[]) => boolean;

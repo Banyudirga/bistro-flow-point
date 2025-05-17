@@ -4,28 +4,40 @@ import { toast } from "@/components/ui/sonner";
 import { AuthContext } from './AuthContext';
 import { User, UserRole } from './types';
 import { localStorageHelper, LocalStorageUser } from '@/utils/localStorage';
+import { cleanupAuthState } from './utils';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   // Initialize auth state from localStorage
   useEffect(() => {
-    console.log("Checking for user in localStorage");
-    const storedUser = localStorageHelper.getUser();
+    console.log("Initializing auth state from localStorage");
     
-    if (storedUser) {
-      console.log("Found user in localStorage:", storedUser.email);
-      setUser({
-        id: storedUser.id,
-        email: storedUser.email,
-        firstName: storedUser.firstName,
-        lastName: storedUser.lastName,
-        role: storedUser.role
-      });
-    }
+    // Set a short timeout to ensure this runs after any other initialization code
+    const timer = setTimeout(() => {
+      const storedUser = localStorageHelper.getUser();
+      
+      if (storedUser) {
+        console.log("Found user in localStorage:", storedUser.email);
+        setUser({
+          id: storedUser.id,
+          email: storedUser.email,
+          firstName: storedUser.firstName,
+          lastName: storedUser.lastName,
+          role: storedUser.role
+        });
+      } else {
+        console.log("No user found in localStorage");
+        setUser(null);
+      }
+      
+      setLoading(false);
+      setInitialized(true);
+    }, 10);
     
-    setLoading(false);
+    return () => clearTimeout(timer);
   }, []);
 
   // Sign in function with localStorage
@@ -34,6 +46,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     
     try {
+      // Clean up any existing auth state first
+      cleanupAuthState();
+      
       // Demo accounts (hardcoded for now)
       const demoAccounts = [
         { email: 'owner@example.com', password: 'password', firstName: 'John', lastName: 'Owner', role: 'owner' as UserRole },
@@ -59,9 +74,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Update state
         setUser(newUser);
         console.log("Sign in successful for:", newUser.email);
-        toast.success(`Welcome back, ${newUser.email}`);
+        toast.success(`Welcome back, ${newUser.firstName}`);
         
         setLoading(false);
+        setInitialized(true);
         return true;
       } else {
         console.error('Invalid credentials');
@@ -77,12 +93,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Sign out function with localStorage
   const signOut = async () => {
+    console.log("Signing out");
     try {
-      // Remove user from localStorage
-      localStorageHelper.removeUser();
-      
-      // Update state
+      // First set user to null to prevent redirect loops during cleanup
       setUser(null);
+      
+      // Then clean up localStorage
+      cleanupAuthState();
+      
       toast.success('Logged out successfully');
     } catch (error: any) {
       console.error('Logout error:', error);
@@ -98,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut, isAuthorized }}>
+    <AuthContext.Provider value={{ user, loading, initialized, signIn, signOut, isAuthorized }}>
       {children}
     </AuthContext.Provider>
   );

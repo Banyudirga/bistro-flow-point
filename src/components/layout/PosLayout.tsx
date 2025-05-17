@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
@@ -7,27 +8,29 @@ import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
 
 export const PosLayout: React.FC = () => {
-  const { user, loading, isAuthorized, signOut } = useAuth();
+  const { user, loading, initialized, isAuthorized, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Wait for auth state to be determined before redirecting
-  if (loading) {
+  console.log("PosLayout - Auth State:", { user: user?.email, loading, initialized });
+  
+  // Wait for auth state to be fully determined before making redirect decisions
+  if (loading || !initialized) {
     return <div className="min-h-screen flex items-center justify-center">
-      <p>Loading...</p>
+      <p>Loading authentication...</p>
     </div>;
   }
   
-  // If no user is logged in, redirect to login
-  if (!user) {
-    console.log("No user found, redirecting to login");
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  // If no user is logged in and auth is initialized, redirect to login
+  if (!user && initialized) {
+    console.log("No authenticated user found, redirecting to login");
+    return <Navigate to="/login" replace />;
   }
 
   const handleSignOut = async () => {
     await signOut();
-    // Force full page navigation on sign out
-    window.location.href = '/login';
+    // Use navigate for a cleaner transition
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -136,14 +139,14 @@ export const PosLayout: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-accent-foreground">
-                  {user.firstName?.[0] || user.email[0].toUpperCase()}
+                  {user?.firstName?.[0] || user?.email?.[0]?.toUpperCase() || '?'}
                 </div>
                 <div className="ml-2">
                   <p className="text-sm font-medium text-sidebar-foreground">
-                    {user.firstName} {user.lastName}
+                    {user?.firstName} {user?.lastName}
                   </p>
                   <p className="text-xs text-sidebar-foreground/70 capitalize">
-                    {user.role.replace('_', ' ')}
+                    {user?.role.replace('_', ' ')}
                   </p>
                 </div>
               </div>

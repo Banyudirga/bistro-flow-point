@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
@@ -16,7 +17,7 @@ import { PaymentDialog } from '@/components/pos/PaymentDialog';
 import { ReceiptDialog } from '@/components/pos/ReceiptDialog';
 
 const Pos = () => {
-  const { user } = useAuth();
+  const { user, loading, initialized } = useAuth();
   const { menuItems, categories, isLoading } = useMenuItems();
   const { cart, addToCart, removeFromCart, clearCart, calculateTotal } = useCart();
   const { 
@@ -27,6 +28,21 @@ const Pos = () => {
     currentReceipt,
     createOrderMutation
   } = useOrderManagement(user?.id);
+
+  console.log("Pos - Auth State:", { user: user?.email, loading, initialized });
+
+  // Wait for auth state to be fully determined before making redirect decisions  
+  if (loading || !initialized) {
+    return <div className="flex items-center justify-center h-full">
+      <p>Loading authentication...</p>
+    </div>;
+  }
+
+  // Check if user is authenticated
+  if (!user && initialized) {
+    console.log("No authenticated user found in Pos component, redirecting to login");
+    return <Navigate to="/login" replace />;
+  }
 
   // Handle payment
   const handlePayment = (paymentMethod: string, amountPaid: string) => {
@@ -61,11 +77,6 @@ const Pos = () => {
     clearCart();
     setReceiptDialogOpen(false);
   };
-
-  // Check if user is authenticated
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
 
   return (
     <div className="h-full flex flex-col">

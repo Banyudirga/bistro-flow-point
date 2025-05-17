@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
+import { cleanupAuthState } from '@/contexts/auth/utils';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -15,12 +16,31 @@ const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const { user, signIn } = useAuth();
+  const { user, loading, initialized, signIn } = useAuth();
   const navigate = useNavigate();
   
-  // If already logged in, redirect to main page
-  if (user) {
-    return <Navigate to="/pos" replace />;
+  // Clean up auth state when the login page is loaded
+  // This helps prevent redirect loops due to stale auth state
+  useEffect(() => {
+    console.log("Login page mounted, cleaning up any stale auth state");
+    cleanupAuthState();
+  }, []);
+  
+  // If already logged in (and auth is fully initialized), redirect to main page
+  useEffect(() => {
+    if (initialized && user) {
+      console.log("User is already logged in, redirecting to /pos");
+      navigate('/pos', { replace: true });
+    }
+  }, [user, initialized, navigate]);
+  
+  // If auth is still loading, don't show redirects or login form yet
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+        <p>Loading authentication status...</p>
+      </div>
+    );
   }
   
   const handleSignUp = async (e: React.FormEvent) => {
@@ -58,8 +78,8 @@ const Login = () => {
       
       if (success) {
         console.log("Login successful, redirecting to /pos");
-        // Use window.location for a full page redirect to ensure clean state
-        window.location.href = '/pos';
+        // Use React Router navigate instead of window.location for better state management
+        navigate('/pos', { replace: true });
       } else {
         setIsLoading(false);
         toast.error('Login failed. Please check your credentials.');
