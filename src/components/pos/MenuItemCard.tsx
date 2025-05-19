@@ -6,6 +6,7 @@ interface MenuItem {
   name: string;
   price: number;
   image_url: string | null;
+  description?: string | null;
 }
 
 interface MenuItemCardProps {
@@ -24,10 +25,14 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, onSelect }) =>
           src={item.image_url || 'https://via.placeholder.com/80'} 
           alt={item.name} 
           className="w-20 h-20 object-cover rounded"
+          loading="lazy"
         />
       </div>
       <div className="font-medium">{item.name}</div>
-      <div className="text-green-600">${item.price.toFixed(2)}</div>
+      <div className="text-green-600">Rp{item.price.toLocaleString('id-ID')}</div>
+      {item.description && (
+        <div className="text-xs text-gray-600 mt-1 line-clamp-2">{item.description}</div>
+      )}
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
@@ -33,7 +34,7 @@ const Pos = () => {
   // Wait until authentication is fully initialized
   if (!initialized || loading) {
     return <div className="flex items-center justify-center h-full">
-      <p>Loading authentication...</p>
+      <p>Memuat autentikasi...</p>
     </div>;
   }
 
@@ -48,13 +49,13 @@ const Pos = () => {
     const total = calculateTotal();
     
     if (cart.length === 0) {
-      toast.error("Cart is empty");
+      toast.error("Keranjang kosong");
       return;
     }
     
     const paid = parseFloat(amountPaid);
     if (paymentMethod === "cash" && (isNaN(paid) || paid < total)) {
-      toast.error("Invalid amount paid");
+      toast.error("Jumlah pembayaran tidak valid");
       return;
     }
     
@@ -70,7 +71,7 @@ const Pos = () => {
   // Print receipt
   const printReceipt = () => {
     window.print();
-    toast.success("Receipt printed");
+    toast.success("Struk berhasil dicetak");
     
     // Clear the cart after successful payment
     clearCart();
@@ -79,7 +80,7 @@ const Pos = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="text-2xl font-bold mb-4">Point of Sale</div>
+      <div className="text-2xl font-bold mb-4">Kasir</div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
         {/* Menu Section */}
@@ -88,7 +89,7 @@ const Pos = () => {
             <CardContent className="p-4 h-full">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
-                  Loading menu items...
+                  Memuat menu...
                 </div>
               ) : menuItems && menuItems.length > 0 ? (
                 <MenuCategories 
@@ -98,8 +99,8 @@ const Pos = () => {
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  <p>No menu items found.</p>
-                  <p className="text-sm">Add menu items in the inventory page.</p>
+                  <p>Tidak ada menu ditemukan.</p>
+                  <p className="text-sm">Tambahkan menu di halaman inventaris.</p>
                 </div>
               )}
             </CardContent>

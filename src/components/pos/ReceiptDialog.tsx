@@ -35,32 +35,48 @@ export const ReceiptDialog: React.FC<ReceiptDialogProps> = ({
 }) => {
   if (!receipt) return null;
 
+  // Helper function to translate payment methods
+  const translatePaymentMethod = (method: string): string => {
+    switch (method.toLowerCase()) {
+      case 'cash': return 'Tunai';
+      case 'card': return 'Kartu';
+      case 'qris': return 'QRIS';
+      default: return method;
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md print:shadow-none print:border-none">
         <DialogHeader>
-          <DialogTitle>Receipt</DialogTitle>
+          <DialogTitle>Struk</DialogTitle>
         </DialogHeader>
         
         <div className="py-4">
           <div className="text-center border-b pb-2 mb-2">
-            <h3 className="font-bold text-lg">Restaurant Name</h3>
-            <p className="text-sm">123 Restaurant St, City</p>
-            <p className="text-sm">Tel: (123) 456-7890</p>
+            <h3 className="font-bold text-lg">Nama Restoran</h3>
+            <p className="text-sm">Jl. Restoran No. 123, Kota</p>
+            <p className="text-sm">Tel: (021) 123-4567</p>
           </div>
           
           <div className="border-b pb-2 mb-2">
             <div className="flex justify-between text-sm">
-              <span>Receipt #:</span>
+              <span>No. Struk:</span>
               <span>{receipt.orderNumber}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span>Date:</span>
-              <span>{receipt.date.toLocaleString()}</span>
+              <span>Tanggal:</span>
+              <span>{receipt.date.toLocaleString('id-ID', { 
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span>Payment Method:</span>
-              <span className="capitalize">{receipt.paymentMethod}</span>
+              <span>Metode Pembayaran:</span>
+              <span>{translatePaymentMethod(receipt.paymentMethod)}</span>
             </div>
           </div>
           
@@ -72,29 +88,29 @@ export const ReceiptDialog: React.FC<ReceiptDialogProps> = ({
             {receipt.items.map((item, index) => (
               <div key={index} className="text-sm flex justify-between">
                 <span>{item.quantity} x {item.name}</span>
-                <span>${(item.price * item.quantity).toFixed(2)}</span>
+                <span>Rp{(item.price * item.quantity).toLocaleString('id-ID')}</span>
               </div>
             ))}
           </div>
           
           <div className="font-bold flex justify-between">
             <span>Total:</span>
-            <span>${receipt.total.toFixed(2)}</span>
+            <span>Rp{receipt.total.toLocaleString('id-ID')}</span>
           </div>
           
           <div className="text-center mt-4 text-sm">
-            <p>Thank you for your visit!</p>
-            <p>Please come again</p>
+            <p>Terima kasih atas kunjungan Anda!</p>
+            <p>Silahkan datang kembali</p>
           </div>
         </div>
         
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
+            Tutup
           </Button>
           <Button onClick={onPrintReceipt}>
             <Printer className="mr-2 h-4 w-4" />
-            Print Receipt
+            Cetak Struk
           </Button>
         </DialogFooter>
       </DialogContent>

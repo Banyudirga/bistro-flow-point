@@ -28,17 +28,34 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
   if (categories.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-500">
-        <p>No menu categories found.</p>
+        <p>Kategori menu tidak ditemukan.</p>
       </div>
     );
   }
 
+  // Translate categories to Indonesian if they match default English values
+  const translateCategory = (category: string): string => {
+    const translations: Record<string, string> = {
+      'Main Course': 'Makanan Utama',
+      'Side Dish': 'Makanan Pendamping',
+      'Beverages': 'Minuman',
+      'Dessert': 'Makanan Penutup'
+    };
+    
+    return translations[category] || category;
+  };
+
+  const displayCategories = categories.map(cat => ({
+    original: cat,
+    display: translateCategory(cat)
+  }));
+
   return (
     <Tabs defaultValue={categories[0] || "foods"} className="h-full flex flex-col">
       <TabsList className="mb-4">
-        {categories.map(category => (
-          <TabsTrigger key={category} value={category}>
-            {category.charAt(0).toUpperCase() + category.slice(1)}
+        {displayCategories.map(category => (
+          <TabsTrigger key={category.original} value={category.original}>
+            {category.display}
           </TabsTrigger>
         ))}
       </TabsList>

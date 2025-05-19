@@ -31,9 +31,16 @@ export const useOrderManagement = (userId: string | undefined) => {
     }) => {
       try {
         // Generate order number (prefix with current date + sequential number)
-        const orderNumber = `R${new Date().toISOString().slice(0, 10).replace(/-/g, '')}${Math.floor(Math.random() * 1000)}`;
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+        const timeStr = String(now.getHours()).padStart(2, '0') + 
+                        String(now.getMinutes()).padStart(2, '0');
+        const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        const orderNumber = `INV${dateStr}${timeStr}-${randomNum}`;
         
         const orderId = `order-${Date.now()}`;
+        
+        console.log("Creating order:", { orderId, orderNumber, items: orderItems, total });
         
         // Create the order in localStorage
         localStorageHelper.addOrder({
@@ -41,7 +48,7 @@ export const useOrderManagement = (userId: string | undefined) => {
           orderNumber,
           items: orderItems,
           total,
-          date: new Date().toISOString(),
+          date: now.toISOString(),
           paymentMethod,
           cashierId: userId || 'unknown'
         });
@@ -50,7 +57,7 @@ export const useOrderManagement = (userId: string | undefined) => {
           id: orderId,
           items: orderItems,
           total,
-          date: new Date(),
+          date: now,
           paymentMethod,
           orderNumber
         };
@@ -58,10 +65,11 @@ export const useOrderManagement = (userId: string | undefined) => {
         setCurrentReceipt(receipt);
         setReceiptDialogOpen(true);
         
-        toast.success('Order created successfully');
+        toast.success('Pesanan berhasil dibuat');
         return receipt;
       } catch (error) {
-        toast.error(`Failed to create order: ${(error as Error).message}`);
+        console.error("Error creating order:", error);
+        toast.error(`Gagal membuat pesanan: ${(error as Error).message}`);
         setPaymentDialogOpen(false);
         throw error;
       }

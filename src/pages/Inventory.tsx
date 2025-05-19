@@ -8,10 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 import { Navigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { localStorageHelper } from '@/utils/localStorage';
 
 // Define inventory item type
 interface InventoryItem {
@@ -35,8 +34,7 @@ interface InventoryFormData {
 }
 
 const Inventory = () => {
-  const { user, isAuthorized } = useAuth();
-  const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   // State for dialog and form
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -50,87 +48,23 @@ const Inventory = () => {
     threshold_quantity: null
   });
   
-  // Fetch inventory items
-  const { data: items, isLoading, error } = useQuery({
-    queryKey: ['inventory'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('*')
-        .order('name');
-        
-      if (error) throw error;
-      return data as InventoryItem[];
+  // State for inventory items
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Load inventory items from localStorage
+  useEffect(() => {
+    try {
+      const inventoryItems = localStorageHelper.getInventoryItems();
+      setItems(inventoryItems);
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Error loading inventory items:', err);
+      setError(err as Error);
+      setIsLoading(false);
     }
-  });
-  
-  // Add inventory item mutation
-  const addItemMutation = useMutation({
-    mutationFn: async (item: InventoryFormData) => {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .insert([item])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      toast.success('Item added successfully');
-      setIsDialogOpen(false);
-    },
-    onError: (error) => {
-      console.error('Error adding item:', error);
-      toast.error('Failed to add item');
-    }
-  });
-  
-  // Update inventory item mutation
-  const updateItemMutation = useMutation({
-    mutationFn: async ({ id, item }: { id: string, item: InventoryFormData }) => {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .update(item)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      toast.success('Item updated successfully');
-      setIsDialogOpen(false);
-    },
-    onError: (error) => {
-      console.error('Error updating item:', error);
-      toast.error('Failed to update item');
-    }
-  });
-  
-  // Delete inventory item mutation
-  const deleteItemMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('inventory_items')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      toast.success('Item deleted successfully');
-    },
-    onError: (error) => {
-      console.error('Error deleting item:', error);
-      toast.error('Failed to delete item');
-    }
-  });
+  }, []);
   
   // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,8 +109,15 @@ const Inventory = () => {
   
   // Handle deleting an item
   const handleDeleteItem = (id: string) => {
-    if (confirm('Are you sure you want to delete this item?')) {
-      deleteItemMutation.mutate(id);
+    if (confirm('Apakah Anda yakin ingin menghapus item ini?')) {
+      try {
+        localStorageHelper.deleteInventoryItem(id);
+        setItems(prevItems => prevItems.filter(item => item.id !== id));
+        toast.success('Item berhasil dihapus');
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        toast.error('Gagal menghapus item');
+      }
     }
   };
   
@@ -185,65 +126,102 @@ const Inventory = () => {
     e.preventDefault();
     
     if (!formData.name || !formData.unit || formData.cost_price <= 0) {
-      toast.error('Please fill in all required fields');
+      toast.error('Mohon isi semua kolom yang diperlukan');
       return;
     }
     
-    if (isNewItem) {
-      addItemMutation.mutate(formData);
-    } else if (currentItemId) {
-      updateItemMutation.mutate({ id: currentItemId, item: formData });
+    try {
+      if (isNewItem) {
+        const newItem: InventoryItem = {
+          id: `inv-${Date.now()}`,
+          name: formData.name,
+          quantity: formData.quantity,
+          unit: formData.unit,
+          cost_price: formData.cost_price,
+          threshold_quantity: formData.threshold_quantity,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        localStorageHelper.addInventoryItem(newItem);
+        setItems(prevItems => [...prevItems, newItem]);
+        toast.success('Item berhasil ditambahkan');
+      } else if (currentItemId) {
+        const updatedItem: InventoryItem = {
+          id: currentItemId,
+          name: formData.name,
+          quantity: formData.quantity,
+          unit: formData.unit,
+          cost_price: formData.cost_price,
+          threshold_quantity: formData.threshold_quantity,
+          created_at: items.find(item => item.id === currentItemId)?.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        localStorageHelper.updateInventoryItem(updatedItem);
+        setItems(prevItems => 
+          prevItems.map(item => 
+            item.id === currentItemId ? updatedItem : item
+          )
+        );
+        toast.success('Item berhasil diperbarui');
+      }
+      
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error saving item:', error);
+      toast.error('Gagal menyimpan item');
     }
   };
   
-  // Check if user is authorized to access this page
+  // Check if user is authenticated
   if (!user) {
     return <Navigate to="/login" replace />;
   }
   
   // Check if user has appropriate role
-  const canManageInventory = isAuthorized(['owner', 'warehouse_admin']);
+  const canManageInventory = true; // Simplified for this example
   
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Inventory Management</h1>
+        <h1 className="text-2xl font-bold">Manajemen Inventaris</h1>
         
         {canManageInventory && (
           <Button onClick={handleAddItem}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Item
+            Tambah Item
           </Button>
         )}
       </div>
       
       {isLoading ? (
-        <div className="flex justify-center p-8">Loading inventory...</div>
+        <div className="flex justify-center p-8">Memuat inventaris...</div>
       ) : error ? (
         <Card>
           <CardContent className="pt-6">
             <div className="text-red-500 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
-              <span>Error loading inventory: {(error as Error).message}</span>
+              <span>Error memuat inventaris: {error.message}</span>
             </div>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Inventory Items</CardTitle>
+            <CardTitle>Item Inventaris</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Unit</TableHead>
-                  <TableHead>Cost Price</TableHead>
-                  <TableHead>Threshold</TableHead>
+                  <TableHead>Nama</TableHead>
+                  <TableHead>Jumlah</TableHead>
+                  <TableHead>Satuan</TableHead>
+                  <TableHead>Harga Modal</TableHead>
+                  <TableHead>Batas Stok</TableHead>
                   <TableHead>Status</TableHead>
-                  {canManageInventory && <TableHead className="text-right">Actions</TableHead>}
+                  {canManageInventory && <TableHead className="text-right">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -253,16 +231,16 @@ const Inventory = () => {
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
                       <TableCell>{item.unit}</TableCell>
-                      <TableCell>${item.cost_price.toFixed(2)}</TableCell>
+                      <TableCell>Rp{item.cost_price.toLocaleString('id-ID')}</TableCell>
                       <TableCell>{item.threshold_quantity !== null ? item.threshold_quantity : 'N/A'}</TableCell>
                       <TableCell>
                         {item.threshold_quantity !== null && item.quantity <= item.threshold_quantity ? (
                           <span className="px-2 py-1 bg-red-100 text-red-800 rounded-md text-xs">
-                            Low Stock
+                            Stok Rendah
                           </span>
                         ) : (
                           <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md text-xs">
-                            In Stock
+                            Tersedia
                           </span>
                         )}
                       </TableCell>
@@ -288,7 +266,7 @@ const Inventory = () => {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={canManageInventory ? 7 : 6} className="text-center py-6">
-                      No inventory items found.
+                      Tidak ada item inventaris ditemukan.
                     </TableCell>
                   </TableRow>
                 )}
@@ -303,27 +281,27 @@ const Inventory = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {isNewItem ? 'Add New Inventory Item' : 'Edit Inventory Item'}
+              {isNewItem ? 'Tambah Item Inventaris Baru' : 'Edit Item Inventaris'}
             </DialogTitle>
           </DialogHeader>
           
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Item Name</Label>
+                <Label htmlFor="name">Nama Item</Label>
                 <Input
                   id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="Enter item name"
+                  placeholder="Masukkan nama item"
                   required
                 />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="quantity">Quantity</Label>
+                  <Label htmlFor="quantity">Jumlah</Label>
                   <Input
                     id="quantity"
                     name="quantity"
@@ -337,13 +315,13 @@ const Inventory = () => {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="unit">Unit</Label>
+                  <Label htmlFor="unit">Satuan</Label>
                   <Input
                     id="unit"
                     name="unit"
                     value={formData.unit}
                     onChange={handleInputChange}
-                    placeholder="e.g., kg, liter, piece"
+                    placeholder="mis., kg, liter, buah"
                     required
                   />
                 </div>
@@ -351,7 +329,7 @@ const Inventory = () => {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="cost_price">Cost Price ($)</Label>
+                  <Label htmlFor="cost_price">Harga Modal (Rp)</Label>
                   <Input
                     id="cost_price"
                     name="cost_price"
@@ -360,13 +338,13 @@ const Inventory = () => {
                     step="0.01"
                     value={formData.cost_price}
                     onChange={handleInputChange}
-                    placeholder="0.00"
+                    placeholder="0"
                     required
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="threshold_quantity">
-                    Threshold Quantity (optional)
+                    Batas Jumlah Stok (opsional)
                   </Label>
                   <Input
                     id="threshold_quantity"
@@ -376,7 +354,7 @@ const Inventory = () => {
                     step="0.01"
                     value={formData.threshold_quantity ?? ''}
                     onChange={handleInputChange}
-                    placeholder="Low stock threshold"
+                    placeholder="Batas stok rendah"
                   />
                 </div>
               </div>
@@ -384,10 +362,10 @@ const Inventory = () => {
             
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>
-                Cancel
+                Batal
               </Button>
               <Button type="submit">
-                {isNewItem ? 'Add Item' : 'Update Item'}
+                {isNewItem ? 'Tambah Item' : 'Perbarui Item'}
               </Button>
             </DialogFooter>
           </form>

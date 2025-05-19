@@ -2,18 +2,17 @@
 import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Trash2 } from 'lucide-react';
 import { CartItem } from './CartItem';
-
-interface CartItemType {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
+import { Separator } from '@/components/ui/separator';
+import { ShoppingCart, Trash2 } from 'lucide-react';
 
 interface CartProps {
-  items: CartItemType[];
+  items: Array<{
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+  }>;
   onClearCart: () => void;
   onRemoveItem: (id: string) => void;
   onAddItem: (id: string) => void;
@@ -27,74 +26,82 @@ export const Cart: React.FC<CartProps> = ({
   onAddItem,
   onCheckout
 }) => {
-  // Calculate total
-  const calculateTotal = () => {
-    return items.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
-
+  // Calculate totals
+  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const tax = subtotal * 0.11; // Indonesian tax rate 11%
+  const total = subtotal + tax;
+  
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
+      {/* Cart Header */}
+      <div className="flex justify-between items-center mb-2">
         <h3 className="text-lg font-semibold flex items-center">
-          <ShoppingCart className="mr-2 h-5 w-5" />
-          Current Order
+          <ShoppingCart className="mr-2 h-5 w-5" /> Keranjang
         </h3>
         {items.length > 0 && (
           <Button 
-            variant="outline" 
+            variant="ghost" 
             size="sm" 
             onClick={onClearCart}
-            className="text-red-500 hover:text-red-700"
           >
             <Trash2 className="h-4 w-4 mr-1" />
-            Clear
+            <span className="text-xs">Kosongkan</span>
           </Button>
         )}
       </div>
       
+      <Separator className="mb-4" />
+      
+      {/* Cart Items */}
       {items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center flex-1 text-gray-500">
-          <ShoppingCart className="h-12 w-12 mb-2" />
-          <p>Your cart is empty</p>
-          <p className="text-sm">Add items from the menu</p>
+        <div className="flex flex-col items-center justify-center flex-1 text-gray-500 text-center">
+          <ShoppingCart className="h-12 w-12 mb-2 opacity-20" />
+          <p>Keranjang Kosong</p>
+          <p className="text-sm">Pilih menu untuk ditambahkan ke keranjang</p>
         </div>
       ) : (
-        <div className="flex flex-col flex-1">
+        <>
           <ScrollArea className="flex-1">
-            <div className="space-y-2">
+            <div className="space-y-3 pr-3">
               {items.map(item => (
-                <CartItem 
-                  key={item.id}
-                  id={item.id}
-                  name={item.name}
-                  price={item.price}
-                  quantity={item.quantity}
-                  onRemove={onRemoveItem}
-                  onAdd={onAddItem}
+                <CartItem
+                  key={`${item.id}-${item.quantity}`}
+                  item={item}
+                  onAddItem={() => onAddItem(item.id)}
+                  onRemoveItem={() => onRemoveItem(item.id)}
                 />
               ))}
             </div>
           </ScrollArea>
           
-          <div className="border-t pt-4 mt-4 space-y-2">
-            <div className="flex justify-between">
-              <span>Subtotal:</span>
-              <span>${calculateTotal().toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between font-bold">
-              <span>Total:</span>
-              <span>${calculateTotal().toFixed(2)}</span>
+          {/* Cart Summary */}
+          <div className="mt-auto pt-4">
+            <Separator className="mb-4" />
+            
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal</span>
+                <span>Rp{subtotal.toLocaleString('id-ID')}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>PPN (11%)</span>
+                <span>Rp{tax.toLocaleString('id-ID')}</span>
+              </div>
+              <div className="flex justify-between font-semibold mt-2">
+                <span>Total</span>
+                <span>Rp{total.toLocaleString('id-ID')}</span>
+              </div>
             </div>
             
             <Button 
               className="w-full mt-4" 
-              size="lg"
               onClick={onCheckout}
+              disabled={items.length === 0}
             >
-              Checkout
+              Bayar
             </Button>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
