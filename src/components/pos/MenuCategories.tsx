@@ -33,6 +33,7 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
 }) => {
   const { user } = useAuth();
   const [isAddMenuDialogOpen, setIsAddMenuDialogOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>(categories[0] || "");
   
   if (categories.length === 0) {
     return (
@@ -61,29 +62,37 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
 
   return (
     <>
-      <div className="flex justify-between items-center mb-4">
-        <TabsList>
-          {displayCategories.map(category => (
-            <TabsTrigger key={category.original} value={category.original}>
-              {category.display}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <Tabs 
+        defaultValue={categories[0] || "foods"} 
+        className="h-full flex flex-col"
+        value={activeCategory}
+        onValueChange={setActiveCategory}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <TabsList>
+            {displayCategories.map(category => (
+              <TabsTrigger 
+                key={category.original} 
+                value={category.original}
+              >
+                {category.display}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          
+          {/* Only show add menu button for owner */}
+          {user?.role === 'owner' && (
+            <Button 
+              size="sm" 
+              onClick={() => setIsAddMenuDialogOpen(true)}
+              className="ml-2"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Tambah Menu
+            </Button>
+          )}
+        </div>
         
-        {/* Only show add menu button for owner */}
-        {user?.role === 'owner' && (
-          <Button 
-            size="sm" 
-            onClick={() => setIsAddMenuDialogOpen(true)}
-            className="ml-2"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Tambah Menu
-          </Button>
-        )}
-      </div>
-      
-      <Tabs defaultValue={categories[0] || "foods"} className="h-full flex flex-col">
         {categories.map(category => (
           <TabsContent 
             key={category} 
