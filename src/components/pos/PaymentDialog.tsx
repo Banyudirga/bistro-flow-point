@@ -30,7 +30,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
   const [amountPaid, setAmountPaid] = useState('');
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  // No tax (0%)
+  // No tax calculation
   
   const changeAmount = parseFloat(amountPaid) - totalAmount;
   const showChange = paymentMethod === 'cash' && !isNaN(changeAmount) && changeAmount >= 0;

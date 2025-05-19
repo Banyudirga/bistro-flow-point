@@ -26,10 +26,8 @@ export const Cart: React.FC<CartProps> = ({
   onAddItem,
   onCheckout
 }) => {
-  // Calculate totals
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.11; // Indonesian tax rate 11%
-  const total = subtotal + tax;
+  // Calculate total (no tax anymore)
+  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
   return (
     <div className="flex flex-col h-full">
@@ -74,19 +72,11 @@ export const Cart: React.FC<CartProps> = ({
             </div>
           </ScrollArea>
           
-          {/* Cart Summary */}
+          {/* Cart Summary (no subtotal and tax, just total) */}
           <div className="mt-auto pt-4">
             <Separator className="mb-4" />
             
             <div className="space-y-1.5">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>Rp{subtotal.toLocaleString('id-ID')}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>PPN (11%)</span>
-                <span>Rp{tax.toLocaleString('id-ID')}</span>
-              </div>
               <div className="flex justify-between font-semibold mt-2">
                 <span>Total</span>
                 <span>Rp{total.toLocaleString('id-ID')}</span>

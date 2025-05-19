@@ -1,3 +1,4 @@
+
 // Define types for our local storage data
 export interface LocalStorageUser {
   id: string;
@@ -10,6 +11,7 @@ export interface LocalStorageUser {
 export interface MenuIngredient {
   inventoryId: string;
   amount: number;
+  unit?: string; // Added unit field for ingredients
 }
 
 export interface LocalMenuItem {
@@ -601,6 +603,8 @@ export const localStorageHelper = {
             // Update inventory quantity
             inventoryItems[inventoryIndex].quantity = Math.max(0, inventoryItems[inventoryIndex].quantity - reduceAmount);
             inventoryItems[inventoryIndex].updated_at = new Date().toISOString();
+            
+            console.log(`Reduced ${reduceAmount} ${ingredient.unit || inventoryItems[inventoryIndex].unit} of ${inventoryItems[inventoryIndex].name} from inventory`);
           }
         });
       }

@@ -26,11 +26,19 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [menuIngredients, setMenuIngredients] = useState<Array<{inventoryId: string, amount: string}>>([
-    { inventoryId: '', amount: '1' }
+  const [menuIngredients, setMenuIngredients] = useState<Array<{
+    inventoryId: string, 
+    amount: string,
+    unit: string
+  }>>([
+    { inventoryId: '', amount: '1', unit: '' }
   ]);
   
-  const [inventoryItems, setInventoryItems] = useState<Array<{id: string, name: string}>>([]);
+  const [inventoryItems, setInventoryItems] = useState<Array<{
+    id: string, 
+    name: string,
+    unit: string
+  }>>([]);
   
   // Load categories and inventory items
   useEffect(() => {
@@ -41,7 +49,7 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
       setCategory('');
       setDescription('');
       setImageUrl('');
-      setMenuIngredients([{ inventoryId: '', amount: '1' }]);
+      setMenuIngredients([{ inventoryId: '', amount: '1', unit: '' }]);
       
       // Load existing categories
       const menuItems = localStorageHelper.getMenuItems();
@@ -50,12 +58,16 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
       
       // Load inventory items
       const inventoryItems = localStorageHelper.getInventoryItems();
-      setInventoryItems(inventoryItems.map(item => ({ id: item.id, name: item.name })));
+      setInventoryItems(inventoryItems.map(item => ({ 
+        id: item.id, 
+        name: item.name,
+        unit: item.unit
+      })));
     }
   }, [open]);
   
   const handleAddMenuIngredient = () => {
-    setMenuIngredients([...menuIngredients, { inventoryId: '', amount: '1' }]);
+    setMenuIngredients([...menuIngredients, { inventoryId: '', amount: '1', unit: '' }]);
   };
   
   const handleRemoveMenuIngredient = (index: number) => {
@@ -66,9 +78,18 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
     }
   };
   
-  const handleIngredientChange = (index: number, field: 'inventoryId' | 'amount', value: string) => {
+  const handleIngredientChange = (index: number, field: 'inventoryId' | 'amount' | 'unit', value: string) => {
     const newIngredients = [...menuIngredients];
     newIngredients[index][field] = value;
+    
+    // If changing the inventory item, automatically set the unit
+    if (field === 'inventoryId') {
+      const selectedItem = inventoryItems.find(item => item.id === value);
+      if (selectedItem) {
+        newIngredients[index].unit = selectedItem.unit;
+      }
+    }
+    
     setMenuIngredients(newIngredients);
   };
   
@@ -86,7 +107,8 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
         .filter(ing => ing.inventoryId && parseFloat(ing.amount) > 0)
         .map(ing => ({
           inventoryId: ing.inventoryId,
-          amount: parseFloat(ing.amount)
+          amount: parseFloat(ing.amount),
+          unit: ing.unit
         }));
       
       // Create new menu item
@@ -230,13 +252,17 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
                   
                   <Input
                     type="number"
-                    min="0.1"
-                    step="0.1"
+                    min="0.01"
+                    step="0.01"
                     value={ingredient.amount}
                     onChange={(e) => handleIngredientChange(index, 'amount', e.target.value)}
                     placeholder="Jumlah"
                     className="w-24"
                   />
+                  
+                  <span className="w-20 text-sm text-gray-600 truncate">
+                    {ingredient.unit}
+                  </span>
                   
                   <Button
                     type="button"
@@ -249,6 +275,9 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
                   </Button>
                 </div>
               ))}
+              <p className="text-xs text-gray-500 mt-1">
+                Catatan: Satuan bahan diambil dari data inventaris
+              </p>
             </div>
           </div>
           
