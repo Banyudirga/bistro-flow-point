@@ -31,7 +31,7 @@ export const useCart = () => {
       }
     });
     
-    toast.success(`Added ${item.name} to cart`);
+    toast.success(`${item.name} ditambahkan ke keranjang`);
   };
   
   // Remove item from cart
@@ -52,7 +52,7 @@ export const useCart = () => {
   // Clear cart
   const clearCart = () => {
     setCart([]);
-    toast.info("Cart cleared");
+    toast.info("Keranjang dikosongkan");
   };
   
   // Calculate total

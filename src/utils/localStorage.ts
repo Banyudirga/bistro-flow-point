@@ -1,4 +1,3 @@
-
 // Define types for our local storage data
 export interface LocalStorageUser {
   id: string;
@@ -6,6 +5,11 @@ export interface LocalStorageUser {
   firstName: string;
   lastName: string;
   role: 'owner' | 'warehouse_admin' | 'cashier';
+}
+
+export interface MenuIngredient {
+  inventoryId: string;
+  amount: number;
 }
 
 export interface LocalMenuItem {
@@ -16,6 +20,7 @@ export interface LocalMenuItem {
   image_url: string | null;
   description: string | null;
   is_available: boolean;
+  ingredients?: MenuIngredient[];
 }
 
 export interface LocalInventoryItem {
@@ -61,7 +66,11 @@ const DEFAULT_MENU_ITEMS: LocalMenuItem[] = [
     category: 'Makanan Utama',
     image_url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
     description: 'Burger sapi dengan keju',
-    is_available: true
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-1', amount: 0.2 },
+      { inventoryId: 'inv-4', amount: 2 }
+    ]
   },
   {
     id: '2',
@@ -70,7 +79,10 @@ const DEFAULT_MENU_ITEMS: LocalMenuItem[] = [
     category: 'Makanan Pendamping',
     image_url: 'https://images.unsplash.com/photo-1576777647209-e8733d7b851d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
     description: 'Kentang goreng renyah',
-    is_available: true
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-2', amount: 0.3 }
+    ]
   },
   {
     id: '3',
@@ -79,7 +91,10 @@ const DEFAULT_MENU_ITEMS: LocalMenuItem[] = [
     category: 'Minuman',
     image_url: 'https://images.unsplash.com/photo-1588310566453-8eb669be9132?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
     description: 'Minuman teh dingin menyegarkan',
-    is_available: true
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-3', amount: 0.03 }
+    ]
   },
   {
     id: '4',
@@ -88,7 +103,11 @@ const DEFAULT_MENU_ITEMS: LocalMenuItem[] = [
     category: 'Makanan Utama',
     image_url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
     description: 'Pizza keju dengan saus tomat',
-    is_available: true
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-1', amount: 0.1 },
+      { inventoryId: 'inv-4', amount: 3 }
+    ]
   },
   {
     id: '5',
@@ -97,8 +116,162 @@ const DEFAULT_MENU_ITEMS: LocalMenuItem[] = [
     category: 'Makanan Penutup',
     image_url: 'https://images.unsplash.com/photo-1566454419290-57a0cb3c3429?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
     description: 'Es krim vanilla',
-    is_available: true
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-5', amount: 0.15 }
+    ]
   },
+  {
+    id: '6',
+    name: 'Nasi Goreng Spesial',
+    price: 32000,
+    category: 'Makanan Utama',
+    image_url: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Nasi goreng dengan telur dan ayam',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-6', amount: 0.25 },
+      { inventoryId: 'inv-7', amount: 1 }
+    ]
+  },
+  {
+    id: '7',
+    name: 'Mie Goreng',
+    price: 28000,
+    category: 'Makanan Utama',
+    image_url: 'https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Mie goreng dengan sayuran dan telur',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-8', amount: 0.2 },
+      { inventoryId: 'inv-7', amount: 1 }
+    ]
+  },
+  {
+    id: '8',
+    name: 'Sate Ayam',
+    price: 30000,
+    category: 'Makanan Utama',
+    image_url: 'https://images.unsplash.com/photo-1529563021893-ea8facb87368?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Sate ayam dengan bumbu kacang',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-6', amount: 0.2 },
+      { inventoryId: 'inv-9', amount: 0.1 }
+    ]
+  },
+  {
+    id: '9',
+    name: 'Es Jeruk',
+    price: 12000,
+    category: 'Minuman',
+    image_url: 'https://images.unsplash.com/photo-1570599299189-8baa2e8732a1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Minuman jeruk segar',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-10', amount: 0.3 }
+    ]
+  },
+  {
+    id: '10',
+    name: 'Kopi',
+    price: 15000,
+    category: 'Minuman',
+    image_url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Kopi hitam',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-11', amount: 0.02 }
+    ]
+  },
+  {
+    id: '11',
+    name: 'Nugget Ayam',
+    price: 22000,
+    category: 'Makanan Pendamping',
+    image_url: 'https://images.unsplash.com/photo-1562967915-92ae0c320a01?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Nugget ayam dengan saus',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-6', amount: 0.15 }
+    ]
+  },
+  {
+    id: '12',
+    name: 'Salad Buah',
+    price: 25000,
+    category: 'Makanan Penutup',
+    image_url: 'https://images.unsplash.com/photo-1564093497595-593b96d80180?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Salad buah segar dengan yogurt',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-12', amount: 0.3 },
+      { inventoryId: 'inv-13', amount: 0.2 }
+    ]
+  },
+  {
+    id: '13',
+    name: 'Puding',
+    price: 15000,
+    category: 'Makanan Penutup',
+    image_url: 'https://images.unsplash.com/photo-1516715094483-75da7dee9758?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Puding coklat dengan vla',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-5', amount: 0.1 },
+      { inventoryId: 'inv-14', amount: 0.05 }
+    ]
+  },
+  {
+    id: '14',
+    name: 'Pisang Goreng',
+    price: 18000,
+    category: 'Makanan Penutup',
+    image_url: 'https://images.unsplash.com/photo-1581969901161-14425e8b0336?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Pisang goreng dengan topping keju',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-15', amount: 0.3 },
+      { inventoryId: 'inv-4', amount: 0.1 }
+    ]
+  },
+  {
+    id: '15',
+    name: 'Teh Botol',
+    price: 8000,
+    category: 'Minuman',
+    image_url: 'https://images.unsplash.com/photo-1525385133512-2f3bdd039054?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Teh botol dingin',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-16', amount: 1 }
+    ]
+  },
+  {
+    id: '16',
+    name: 'Sosis Bakar',
+    price: 15000,
+    category: 'Makanan Pendamping',
+    image_url: 'https://images.unsplash.com/photo-1527324688151-0e627063f2b1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Sosis bakar dengan saus',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-17', amount: 2 }
+    ]
+  },
+  {
+    id: '17',
+    name: 'Roti Bakar',
+    price: 18000,
+    category: 'Makanan Pendamping',
+    image_url: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&h=500&q=80',
+    description: 'Roti bakar dengan selai pilihan',
+    is_available: true,
+    ingredients: [
+      { inventoryId: 'inv-18', amount: 2 },
+      { inventoryId: 'inv-19', amount: 0.05 }
+    ]
+  }
 ];
 
 // Default inventory items if none exist
@@ -129,6 +302,166 @@ const DEFAULT_INVENTORY_ITEMS: LocalInventoryItem[] = [
     quantity: 5,
     unit: 'kg',
     cost_price: 30000,
+    threshold_quantity: 2,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-4',
+    name: 'Keju',
+    quantity: 8,
+    unit: 'kg',
+    cost_price: 80000,
+    threshold_quantity: 3,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-5',
+    name: 'Susu',
+    quantity: 15,
+    unit: 'liter',
+    cost_price: 18000,
+    threshold_quantity: 5,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-6',
+    name: 'Ayam',
+    quantity: 25,
+    unit: 'kg',
+    cost_price: 35000,
+    threshold_quantity: 10,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-7',
+    name: 'Telur',
+    quantity: 100,
+    unit: 'butir',
+    cost_price: 2000,
+    threshold_quantity: 30,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-8',
+    name: 'Mie',
+    quantity: 30,
+    unit: 'kg',
+    cost_price: 15000,
+    threshold_quantity: 10,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-9',
+    name: 'Kacang Tanah',
+    quantity: 12,
+    unit: 'kg',
+    cost_price: 25000,
+    threshold_quantity: 5,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-10',
+    name: 'Jeruk',
+    quantity: 15,
+    unit: 'kg',
+    cost_price: 18000,
+    threshold_quantity: 5,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-11',
+    name: 'Kopi',
+    quantity: 10,
+    unit: 'kg',
+    cost_price: 150000,
+    threshold_quantity: 3,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-12',
+    name: 'Buah Campuran',
+    quantity: 15,
+    unit: 'kg',
+    cost_price: 25000,
+    threshold_quantity: 5,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-13',
+    name: 'Yogurt',
+    quantity: 10,
+    unit: 'liter',
+    cost_price: 30000,
+    threshold_quantity: 3,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-14',
+    name: 'Coklat',
+    quantity: 5,
+    unit: 'kg',
+    cost_price: 80000,
+    threshold_quantity: 2,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-15',
+    name: 'Pisang',
+    quantity: 20,
+    unit: 'kg',
+    cost_price: 15000,
+    threshold_quantity: 8,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-16',
+    name: 'Teh Botol',
+    quantity: 50,
+    unit: 'botol',
+    cost_price: 5000,
+    threshold_quantity: 20,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-17',
+    name: 'Sosis',
+    quantity: 40,
+    unit: 'buah',
+    cost_price: 2500,
+    threshold_quantity: 15,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-18',
+    name: 'Roti',
+    quantity: 30,
+    unit: 'lembar',
+    cost_price: 3000,
+    threshold_quantity: 10,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'inv-19',
+    name: 'Selai',
+    quantity: 5,
+    unit: 'kg',
+    cost_price: 45000,
     threshold_quantity: 2,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -235,10 +568,45 @@ export const localStorageHelper = {
     const orders = localStorageHelper.getOrders();
     orders.push(order);
     localStorageHelper.setOrders(orders);
+    
+    // Reduce inventory based on menu items in the order
+    localStorageHelper.reduceInventoryFromOrder(order);
   },
   
   getOrderById: (id: string): LocalOrder | undefined => {
     const orders = localStorageHelper.getOrders();
     return orders.find(order => order.id === id);
+  },
+  
+  // Function to reduce inventory based on order
+  reduceInventoryFromOrder: (order: LocalOrder): void => {
+    const menuItems = localStorageHelper.getMenuItems();
+    const inventoryItems = localStorageHelper.getInventoryItems();
+    
+    // For each item in the order
+    order.items.forEach(orderItem => {
+      // Find the menu item
+      const menuItem = menuItems.find(menu => menu.id === orderItem.id);
+      
+      // If menu item exists and has ingredients
+      if (menuItem && menuItem.ingredients && menuItem.ingredients.length > 0) {
+        menuItem.ingredients.forEach(ingredient => {
+          // Find the inventory item
+          const inventoryIndex = inventoryItems.findIndex(inv => inv.id === ingredient.inventoryId);
+          
+          if (inventoryIndex !== -1) {
+            // Calculate amount to reduce (ingredient amount * order quantity)
+            const reduceAmount = ingredient.amount * orderItem.quantity;
+            
+            // Update inventory quantity
+            inventoryItems[inventoryIndex].quantity = Math.max(0, inventoryItems[inventoryIndex].quantity - reduceAmount);
+            inventoryItems[inventoryIndex].updated_at = new Date().toISOString();
+          }
+        });
+      }
+    });
+    
+    // Save updated inventory
+    localStorageHelper.setInventoryItems(inventoryItems);
   }
 };

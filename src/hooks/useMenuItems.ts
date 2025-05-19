@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { localStorageHelper, LocalMenuItem } from '@/utils/localStorage';
 
 export interface MenuItem {
@@ -18,8 +18,7 @@ export const useMenuItems = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Load menu items from localStorage
-  useEffect(() => {
+  const loadMenuItems = useCallback(() => {
     try {
       const localItems = localStorageHelper.getMenuItems();
       setMenuItems(localItems);
@@ -38,10 +37,16 @@ export const useMenuItems = () => {
     }
   }, []);
 
+  // Load menu items from localStorage
+  useEffect(() => {
+    loadMenuItems();
+  }, [loadMenuItems]);
+
   return {
     menuItems,
     categories,
     isLoading,
-    error
+    error,
+    refreshMenuItems: loadMenuItems
   };
 };

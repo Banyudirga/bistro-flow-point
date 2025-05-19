@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/auth';
@@ -18,7 +18,7 @@ import { ReceiptDialog } from '@/components/pos/ReceiptDialog';
 
 const Pos = () => {
   const { user, loading, initialized } = useAuth();
-  const { menuItems, categories, isLoading } = useMenuItems();
+  const { menuItems, categories, isLoading, refreshMenuItems } = useMenuItems();
   const { cart, addToCart, removeFromCart, clearCart, calculateTotal } = useCart();
   const { 
     paymentDialogOpen, 
@@ -47,6 +47,7 @@ const Pos = () => {
   // Handle payment
   const handlePayment = (paymentMethod: string, amountPaid: string) => {
     const total = calculateTotal();
+    // No tax
     
     if (cart.length === 0) {
       toast.error("Keranjang kosong");
@@ -96,6 +97,7 @@ const Pos = () => {
                   categories={categories}
                   menuItems={menuItems}
                   onSelectItem={addToCart}
+                  onMenuItemsChange={refreshMenuItems}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500">

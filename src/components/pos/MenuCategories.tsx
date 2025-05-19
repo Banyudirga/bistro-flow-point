@@ -1,8 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { MenuItemCard } from './MenuItemCard';
+import { AddMenuItemDialog } from './AddMenuItemDialog';
+import { useAuth } from '@/contexts/auth';
 
 interface MenuItem {
   id: string;
@@ -18,13 +22,18 @@ interface MenuCategoriesProps {
   categories: string[];
   menuItems: MenuItem[];
   onSelectItem: (item: MenuItem) => void;
+  onMenuItemsChange?: () => void;
 }
 
 export const MenuCategories: React.FC<MenuCategoriesProps> = ({
   categories,
   menuItems,
-  onSelectItem
+  onSelectItem,
+  onMenuItemsChange
 }) => {
+  const { user } = useAuth();
+  const [isAddMenuDialogOpen, setIsAddMenuDialogOpen] = useState(false);
+  
   if (categories.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -51,36 +60,62 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
   }));
 
   return (
-    <Tabs defaultValue={categories[0] || "foods"} className="h-full flex flex-col">
-      <TabsList className="mb-4">
-        {displayCategories.map(category => (
-          <TabsTrigger key={category.original} value={category.original}>
-            {category.display}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+    <>
+      <div className="flex justify-between items-center mb-4">
+        <TabsList>
+          {displayCategories.map(category => (
+            <TabsTrigger key={category.original} value={category.original}>
+              {category.display}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        
+        {/* Only show add menu button for owner */}
+        {user?.role === 'owner' && (
+          <Button 
+            size="sm" 
+            onClick={() => setIsAddMenuDialogOpen(true)}
+            className="ml-2"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Tambah Menu
+          </Button>
+        )}
+      </div>
       
-      {categories.map(category => (
-        <TabsContent 
-          key={category} 
-          value={category} 
-          className="flex-1 mt-0"
-        >
-          <ScrollArea className="h-[calc(100vh-220px)]">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-2">
-              {menuItems
-                .filter(item => item.category === category && item.is_available !== false)
-                .map(item => (
-                  <MenuItemCard 
-                    key={item.id} 
-                    item={item} 
-                    onSelect={onSelectItem} 
-                  />
-                ))}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-      ))}
-    </Tabs>
+      <Tabs defaultValue={categories[0] || "foods"} className="h-full flex flex-col">
+        {categories.map(category => (
+          <TabsContent 
+            key={category} 
+            value={category} 
+            className="flex-1 mt-0"
+          >
+            <ScrollArea className="h-[calc(100vh-220px)]">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-2">
+                {menuItems
+                  .filter(item => item.category === category && item.is_available !== false)
+                  .map(item => (
+                    <MenuItemCard 
+                      key={item.id} 
+                      item={item} 
+                      onSelect={onSelectItem} 
+                    />
+                  ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        ))}
+      </Tabs>
+      
+      <AddMenuItemDialog 
+        open={isAddMenuDialogOpen}
+        onOpenChange={setIsAddMenuDialogOpen}
+        onMenuItemAdded={() => {
+          if (onMenuItemsChange) {
+            onMenuItemsChange();
+          }
+        }}
+      />
+    </>
   );
 };
