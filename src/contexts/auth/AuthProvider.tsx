@@ -15,8 +15,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log("Initializing auth state from localStorage");
     
-    // Set a short timeout to ensure this runs after any other initialization code
-    const timer = setTimeout(() => {
+    try {
       const storedUser = localStorageHelper.getUser();
       
       if (storedUser) {
@@ -32,12 +31,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("No user found in localStorage");
         setUser(null);
       }
-      
+    } catch (error) {
+      console.error("Error initializing auth state:", error);
+      setUser(null);
+    } finally {
       setLoading(false);
       setInitialized(true);
-    }, 10);
-    
-    return () => clearTimeout(timer);
+    }
   }, []);
 
   // Sign in function with localStorage
@@ -81,13 +81,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       } else {
         console.error('Invalid credentials');
+        toast.error('Invalid email or password');
         setLoading(false);
         return false;
       }
     } catch (error: any) {
       console.error('Login error:', error);
+      toast.error('Login failed: ' + (error.message || 'Unknown error'));
       setLoading(false);
-      throw error;
+      return false;
     }
   };
 
@@ -105,7 +107,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       console.error('Logout error:', error);
       toast.error('Failed to log out');
-      throw error;
     }
   };
 

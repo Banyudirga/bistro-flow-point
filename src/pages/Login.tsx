@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,6 @@ const Login = () => {
   const navigate = useNavigate();
   
   // Clean up auth state when the login page is loaded
-  // This helps prevent redirect loops due to stale auth state
   useEffect(() => {
     console.log("Login page mounted, cleaning up any stale auth state");
     cleanupAuthState();
@@ -28,14 +27,15 @@ const Login = () => {
   
   // If already logged in (and auth is fully initialized), redirect to main page
   useEffect(() => {
+    // Only redirect when we've confirmed user is logged in and authentication is fully initialized
     if (initialized && user) {
-      console.log("User is already logged in, redirecting to /pos");
-      navigate('/pos', { replace: true });
+      console.log("User is already logged in, redirecting to /pos", { user: user.email, initialized });
+      navigate('/pos');
     }
   }, [user, initialized, navigate]);
   
   // If auth is still loading, don't show redirects or login form yet
-  if (loading) {
+  if (loading && !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
         <p>Loading authentication status...</p>
@@ -74,12 +74,12 @@ const Login = () => {
     
     setIsLoading(true);
     try {
+      console.log("Starting login process");
       const success = await signIn(email, password);
       
       if (success) {
-        console.log("Login successful, redirecting to /pos");
-        // Use React Router navigate instead of window.location for better state management
-        navigate('/pos', { replace: true });
+        console.log("Login successful, navigating to /pos");
+        navigate('/pos');
       } else {
         setIsLoading(false);
         toast.error('Login failed. Please check your credentials.');

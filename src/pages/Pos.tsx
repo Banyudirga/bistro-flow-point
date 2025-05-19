@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
@@ -31,15 +30,15 @@ const Pos = () => {
 
   console.log("Pos - Auth State:", { user: user?.email, loading, initialized });
 
-  // Wait for auth state to be fully determined before making redirect decisions  
-  if (loading || !initialized) {
+  // Wait until authentication is fully initialized
+  if (!initialized || loading) {
     return <div className="flex items-center justify-center h-full">
       <p>Loading authentication...</p>
     </div>;
   }
 
-  // Check if user is authenticated
-  if (!user && initialized) {
+  // Check if user is authenticated after initialization
+  if (!user) {
     console.log("No authenticated user found in Pos component, redirecting to login");
     return <Navigate to="/login" replace />;
   }

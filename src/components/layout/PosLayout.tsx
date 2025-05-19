@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/auth';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarProvider, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
@@ -14,25 +14,27 @@ export const PosLayout: React.FC = () => {
   
   console.log("PosLayout - Auth State:", { user: user?.email, loading, initialized });
   
-  // Wait for auth state to be fully determined before making redirect decisions
-  if (loading || !initialized) {
-    return <div className="min-h-screen flex items-center justify-center">
-      <p>Loading authentication...</p>
-    </div>;
+  // Wait for auth state to be fully initialized before making any decisions
+  if (!initialized || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading authentication...</p>
+      </div>
+    );
   }
   
-  // If no user is logged in and auth is initialized, redirect to login
+  // If no user is logged in after initialization, redirect to login
   if (!user && initialized) {
-    console.log("No authenticated user found, redirecting to login");
+    console.log("No authenticated user found in PosLayout, redirecting to login");
     return <Navigate to="/login" replace />;
   }
 
   const handleSignOut = async () => {
     await signOut();
-    // Use navigate for a cleaner transition
-    navigate('/login', { replace: true });
+    navigate('/login');
   };
 
+  // Main layout for authenticated users
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">

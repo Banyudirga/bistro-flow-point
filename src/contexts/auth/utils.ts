@@ -1,6 +1,8 @@
 
 // Function to clean up auth state - prevents auth limbo issues
 export const cleanupAuthState = () => {
+  console.log("Cleaning up auth state...");
+  
   // For localStorage implementation, remove the user and any potential auth-related keys
   localStorage.removeItem('pos_user');
   
@@ -13,11 +15,15 @@ export const cleanupAuthState = () => {
   });
   
   // Clear session storage as well, in case it's being used
-  Object.keys(sessionStorage || {}).forEach(key => {
-    if (key.startsWith('pos_') || key.includes('auth')) {
-      sessionStorage.removeItem(key);
-    }
-  });
+  try {
+    Object.keys(sessionStorage || {}).forEach(key => {
+      if (key.startsWith('pos_') || key.includes('auth')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  } catch (e) {
+    console.warn("Session storage access error:", e);
+  }
   
   console.log("Auth state cleaned up");
 };
