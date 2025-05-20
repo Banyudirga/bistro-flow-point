@@ -57,7 +57,6 @@ export const useOrderManagement = (userId: string | undefined) => {
           date: now.toISOString(),
           paymentMethod,
           cashierId: userId || 'unknown',
-          // Pass customer information if available
           customerName,
           customerContact
         });
