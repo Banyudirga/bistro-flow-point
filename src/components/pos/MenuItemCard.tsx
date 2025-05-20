@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Edit } from 'lucide-react';
 
 interface MenuItem {
   id: string;
@@ -12,14 +13,20 @@ interface MenuItem {
 interface MenuItemCardProps {
   item: MenuItem;
   onSelect: (item: MenuItem) => void;
+  isEditMode?: boolean;
 }
 
-export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, onSelect }) => {
+export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, onSelect, isEditMode = false }) => {
   return (
     <div 
-      className="border rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors text-center"
+      className={`border rounded-lg p-2 cursor-pointer ${isEditMode ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-gray-50'} transition-colors text-center relative`}
       onClick={() => onSelect(item)}
     >
+      {isEditMode && (
+        <div className="absolute top-2 right-2 bg-amber-200 rounded-full p-1">
+          <Edit className="h-3 w-3" />
+        </div>
+      )}
       <div className="flex justify-center mb-2">
         <img 
           src={item.image_url || 'https://via.placeholder.com/80'} 

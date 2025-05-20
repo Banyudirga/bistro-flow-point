@@ -1,28 +1,31 @@
 
 import React, { useState } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Edit } from 'lucide-react';
 import { MenuItemCard } from './MenuItemCard';
 import { AddMenuItemDialog } from './AddMenuItemDialog';
-import { useAuth } from '@/contexts/auth';
-
-interface MenuItem {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  image_url: string | null;
-  description: string | null;
-  is_available: boolean | null;
-}
+import { EditMenuItemDialog } from './EditMenuItemDialog';
 
 interface MenuCategoriesProps {
   categories: string[];
-  menuItems: MenuItem[];
-  onSelectItem: (item: MenuItem) => void;
-  onMenuItemsChange?: () => void;
+  menuItems: Array<{
+    id: string;
+    name: string;
+    price: number;
+    category: string;
+    image_url: string | null;
+    description?: string | null;
+    is_available?: boolean | null;
+  }>;
+  onSelectItem: (item: {
+    id: string;
+    name: string;
+    price: number;
+    image_url: string | null;
+    description?: string | null;
+  }) => void;
+  onMenuItemsChange: () => void;
 }
 
 export const MenuCategories: React.FC<MenuCategoriesProps> = ({
@@ -31,100 +34,111 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
   onSelectItem,
   onMenuItemsChange
 }) => {
-  const { user } = useAuth();
-  const [isAddMenuDialogOpen, setIsAddMenuDialogOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<string>(categories[0] || "");
-  
-  if (categories.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500">
-        <p>Kategori menu tidak ditemukan.</p>
-      </div>
-    );
-  }
+  const [activeCategory, setActiveCategory] = useState<string>(categories[0] || '');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedMenuItemId, setSelectedMenuItemId] = useState<string | undefined>();
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  // Translate categories to Indonesian if they match default English values
-  const translateCategory = (category: string): string => {
-    const translations: Record<string, string> = {
-      'Main Course': 'Makanan Utama',
-      'Side Dish': 'Makanan Pendamping',
-      'Beverages': 'Minuman',
-      'Dessert': 'Makanan Penutup'
-    };
-    
-    return translations[category] || category;
+  // Filter items by active category
+  const filteredItems = menuItems.filter(item => 
+    item.category === activeCategory && 
+    (item.is_available === undefined || item.is_available === true)
+  );
+
+  // Handle click on menu item
+  const handleMenuItemClick = (item: any) => {
+    if (isEditMode) {
+      // In edit mode, open the edit dialog
+      setSelectedMenuItemId(item.id);
+      setEditDialogOpen(true);
+    } else {
+      // In normal mode, add to cart
+      onSelectItem(item);
+    }
   };
 
-  const displayCategories = categories.map(cat => ({
-    original: cat,
-    display: translateCategory(cat)
-  }));
+  // Toggle edit mode
+  const toggleEditMode = () => {
+    setIsEditMode(!isEditMode);
+  };
 
   return (
-    <>
+    <div className="h-full flex flex-col">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Menu</h2>
+        <div className="flex gap-2">
+          <Button 
+            variant={isEditMode ? "default" : "outline"}
+            size="sm" 
+            onClick={toggleEditMode}
+          >
+            <Edit className="h-4 w-4 mr-1" />
+            {isEditMode ? "Mode Edit Aktif" : "Edit Menu"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            Tambah Menu
+          </Button>
+        </div>
+      </div>
+
       <Tabs 
-        defaultValue={categories[0] || "foods"} 
-        className="h-full flex flex-col"
-        value={activeCategory}
-        onValueChange={setActiveCategory}
+        value={activeCategory} 
+        onValueChange={setActiveCategory} 
+        className="flex-1 flex flex-col"
       >
-        <div className="flex justify-between items-center mb-4">
-          <TabsList>
-            {displayCategories.map(category => (
+        <div className="border-b overflow-x-auto">
+          <TabsList className="w-full justify-start h-auto">
+            {categories.map(category => (
               <TabsTrigger 
-                key={category.original} 
-                value={category.original}
+                key={category} 
+                value={category}
+                className="px-4 py-2 whitespace-nowrap"
               >
-                {category.display}
+                {category}
               </TabsTrigger>
             ))}
           </TabsList>
-          
-          {/* Only show add menu button for owner */}
-          {user?.role === 'owner' && (
-            <Button 
-              size="sm" 
-              onClick={() => setIsAddMenuDialogOpen(true)}
-              className="ml-2"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Tambah Menu
-            </Button>
-          )}
         </div>
-        
+
         {categories.map(category => (
           <TabsContent 
             key={category} 
             value={category} 
-            className="flex-1 mt-0"
+            className="flex-1 overflow-y-auto pt-4"
           >
-            <ScrollArea className="h-[calc(100vh-220px)]">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-2">
-                {menuItems
-                  .filter(item => item.category === category && item.is_available !== false)
-                  .map(item => (
-                    <MenuItemCard 
-                      key={item.id} 
-                      item={item} 
-                      onSelect={onSelectItem} 
-                    />
-                  ))}
-              </div>
-            </ScrollArea>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredItems.map(item => (
+                <MenuItemCard 
+                  key={item.id} 
+                  item={item} 
+                  onSelect={handleMenuItemClick}
+                  isEditMode={isEditMode}
+                />
+              ))}
+              {filteredItems.length === 0 && (
+                <div className="col-span-full text-center py-8 text-gray-500">
+                  Tidak ada menu dalam kategori ini
+                </div>
+              )}
+            </div>
           </TabsContent>
         ))}
       </Tabs>
-      
-      <AddMenuItemDialog 
-        open={isAddMenuDialogOpen}
-        onOpenChange={setIsAddMenuDialogOpen}
-        onMenuItemAdded={() => {
-          if (onMenuItemsChange) {
-            onMenuItemsChange();
-          }
-        }}
+
+      <AddMenuItemDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onMenuItemAdded={onMenuItemsChange}
       />
-    </>
+
+      <EditMenuItemDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onMenuItemUpdated={onMenuItemsChange}
+        menuItemId={selectedMenuItemId}
+      />
+    </div>
   );
 };
