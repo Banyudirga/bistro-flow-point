@@ -6,6 +6,7 @@ import { Plus, Edit } from 'lucide-react';
 import { MenuItemCard } from './MenuItemCard';
 import { AddMenuItemDialog } from './AddMenuItemDialog';
 import { EditMenuItemDialog } from './EditMenuItemDialog';
+import { useAuth } from '@/contexts/auth';
 
 interface MenuCategoriesProps {
   categories: string[];
@@ -39,6 +40,9 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedMenuItemId, setSelectedMenuItemId] = useState<string | undefined>();
   const [isEditMode, setIsEditMode] = useState(false);
+  const { user } = useAuth();
+  
+  const isOwner = user?.role === 'owner';
 
   // Filter items by active category
   const filteredItems = menuItems.filter(item => 
@@ -67,20 +71,22 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
     <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Menu</h2>
-        <div className="flex gap-2">
-          <Button 
-            variant={isEditMode ? "default" : "outline"}
-            size="sm" 
-            onClick={toggleEditMode}
-          >
-            <Edit className="h-4 w-4 mr-1" />
-            {isEditMode ? "Mode Edit Aktif" : "Edit Menu"}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />
-            Tambah Menu
-          </Button>
-        </div>
+        {isOwner && (
+          <div className="flex gap-2">
+            <Button 
+              variant={isEditMode ? "default" : "outline"}
+              size="sm" 
+              onClick={toggleEditMode}
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              {isEditMode ? "Mode Edit Aktif" : "Edit Menu"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Tambah Menu
+            </Button>
+          </div>
+        )}
       </div>
 
       <Tabs 

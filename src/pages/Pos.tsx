@@ -45,7 +45,7 @@ const Pos = () => {
   }
 
   // Handle payment
-  const handlePayment = (paymentMethod: string, amountPaid: string) => {
+  const handlePayment = (paymentMethod: string, amountPaid: string, customerName?: string, customerContact?: string) => {
     const total = calculateTotal();
     // No tax
     
@@ -63,7 +63,9 @@ const Pos = () => {
     createOrderMutation.mutate({
       orderItems: cart,
       total,
-      paymentMethod
+      paymentMethod,
+      customerName,
+      customerContact
     });
     
     setPaymentDialogOpen(false);

@@ -2,9 +2,9 @@
 export interface LocalStorageUser {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  role: 'owner' | 'warehouse_admin' | 'cashier';
+  firstName: string | null;
+  lastName: string | null;
+  role: string;
 }
 
 export interface MenuIngredient {
@@ -472,7 +472,18 @@ const DEFAULT_INVENTORY_ITEMS: LocalInventoryItem[] = [
   }
 ];
 
-// Helper functions for working with localStorage
+// Define the Customer interface
+export interface Customer {
+  id: string;
+  name: string;
+  contact: string;
+  visitCount: number;
+  lastVisitDate: string;
+  lastTransactionAmount: number;
+  totalSpent: number;
+  notes?: string;
+}
+
 export const localStorageHelper = {
   // User related functions
   getUser: (): LocalStorageUser | null => {
@@ -636,5 +647,81 @@ export const localStorageHelper = {
     
     // Save updated inventory
     localStorageHelper.setInventoryItems(inventoryItems);
+  },
+  
+  // Customer management
+  getCustomers(): Customer[] {
+    try {
+      const customers = localStorage.getItem('customers');
+      return customers ? JSON.parse(customers) : [];
+    } catch (error) {
+      console.error('Error getting customers:', error);
+      return [];
+    }
+  },
+
+  getCustomerByContact(contact: string): Customer | undefined {
+    try {
+      const customers = this.getCustomers();
+      return customers.find(customer => customer.contact === contact);
+    } catch (error) {
+      console.error('Error getting customer by contact:', error);
+      return undefined;
+    }
+  },
+
+  updateCustomer(customerData: {
+    name: string;
+    contact: string;
+    lastVisitDate: string;
+    lastTransactionAmount: number;
+    visitCount: number;
+    totalSpent: number;
+    notes?: string;
+  }): void {
+    try {
+      const customers = this.getCustomers();
+      const existingCustomerIndex = customers.findIndex(c => c.contact === customerData.contact);
+      
+      if (existingCustomerIndex !== -1) {
+        // Update existing customer
+        const existingCustomer = customers[existingCustomerIndex];
+        customers[existingCustomerIndex] = {
+          ...existingCustomer,
+          name: customerData.name,
+          lastVisitDate: customerData.lastVisitDate,
+          lastTransactionAmount: customerData.lastTransactionAmount,
+          visitCount: existingCustomer.visitCount + 1,
+          totalSpent: existingCustomer.totalSpent + customerData.totalSpent,
+          notes: customerData.notes || existingCustomer.notes
+        };
+      } else {
+        // Add new customer
+        customers.push({
+          id: `customer-${Date.now()}`,
+          name: customerData.name,
+          contact: customerData.contact,
+          lastVisitDate: customerData.lastVisitDate,
+          lastTransactionAmount: customerData.lastTransactionAmount,
+          visitCount: customerData.visitCount,
+          totalSpent: customerData.totalSpent,
+          notes: customerData.notes
+        });
+      }
+      
+      localStorage.setItem('customers', JSON.stringify(customers));
+    } catch (error) {
+      console.error('Error updating customer:', error);
+    }
+  },
+
+  deleteCustomer(id: string): void {
+    try {
+      const customers = this.getCustomers();
+      const updatedCustomers = customers.filter(customer => customer.id !== id);
+      localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+    }
   }
 };

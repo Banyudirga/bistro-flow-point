@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 
 interface CartItem {
   id: string;
@@ -17,7 +18,7 @@ interface PaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   cart: CartItem[];
-  onCompletePayment: (paymentMethod: string, amountPaid: string) => void;
+  onCompletePayment: (paymentMethod: string, amountPaid: string, customerName?: string, customerContact?: string) => void;
 }
 
 export const PaymentDialog: React.FC<PaymentDialogProps> = ({
@@ -28,6 +29,8 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
 }) => {
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [amountPaid, setAmountPaid] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerContact, setCustomerContact] = useState('');
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   // No tax calculation
@@ -37,7 +40,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCompletePayment(paymentMethod, amountPaid);
+    onCompletePayment(paymentMethod, amountPaid, customerName, customerContact);
   };
   
   return (
@@ -51,6 +54,31 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
           <div className="grid gap-4 py-4">
             <div className="mb-2">
               <div className="text-lg">Total: <span className="font-bold">Rp{totalAmount.toLocaleString('id-ID')}</span></div>
+            </div>
+            
+            {/* Customer Information - Optional */}
+            <div className="border rounded-md p-3 bg-muted/20">
+              <h3 className="text-sm font-medium mb-2">Informasi Pelanggan (Opsional)</h3>
+              <div className="grid gap-2">
+                <div>
+                  <Label htmlFor="customerName">Nama Pelanggan</Label>
+                  <Input
+                    id="customerName"
+                    placeholder="Nama pelanggan"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="customerContact">Nomor Telepon</Label>
+                  <Input
+                    id="customerContact"
+                    placeholder="Nomor telepon"
+                    value={customerContact}
+                    onChange={(e) => setCustomerContact(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
             
             <div className="grid gap-2">

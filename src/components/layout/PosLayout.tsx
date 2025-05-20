@@ -3,7 +3,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/auth';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarProvider, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { ShoppingCart, Package, Clock, FileText, User, LogOut, Settings } from 'lucide-react';
+import { ShoppingCart, Package, Clock, FileText, User, LogOut, Settings, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
 
@@ -33,6 +33,9 @@ export const PosLayout: React.FC = () => {
     await signOut();
     navigate('/login');
   };
+
+  // Check if user is owner for certain menu items
+  const isOwner = user?.role === 'owner';
 
   // Main layout for authenticated users
   return (
@@ -103,7 +106,22 @@ export const PosLayout: React.FC = () => {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   
-                  {isAuthorized(['owner']) && (
+                  {isOwner && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location.pathname === '/customers'}>
+                        <Button 
+                          variant="ghost" 
+                          className={cn("w-full justify-start", location.pathname === '/customers' && "bg-accent text-accent-foreground")}
+                          onClick={() => navigate('/customers')}
+                        >
+                          <Users className="mr-2 h-5 w-5" />
+                          <span>Customers</span>
+                        </Button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
+                  
+                  {isOwner && (
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/settings'}>
                         <Button 
@@ -118,7 +136,7 @@ export const PosLayout: React.FC = () => {
                     </SidebarMenuItem>
                   )}
                   
-                  {isAuthorized(['owner']) && (
+                  {isOwner && (
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={location.pathname === '/users'}>
                         <Button 

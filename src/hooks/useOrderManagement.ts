@@ -11,6 +11,8 @@ export interface Receipt {
   date: Date;
   paymentMethod: string;
   orderNumber: string;
+  customerName?: string;
+  customerContact?: string;
 }
 
 export const useOrderManagement = (userId: string | undefined) => {
@@ -23,11 +25,15 @@ export const useOrderManagement = (userId: string | undefined) => {
     mutate: async ({
       orderItems,
       total,
-      paymentMethod
+      paymentMethod,
+      customerName,
+      customerContact
     }: {
       orderItems: CartItem[],
       total: number,
-      paymentMethod: string
+      paymentMethod: string,
+      customerName?: string,
+      customerContact?: string
     }) => {
       try {
         // Generate order number (prefix with current date + sequential number)
@@ -50,8 +56,22 @@ export const useOrderManagement = (userId: string | undefined) => {
           total,
           date: now.toISOString(),
           paymentMethod,
-          cashierId: userId || 'unknown'
+          cashierId: userId || 'unknown',
+          customerName,
+          customerContact
         });
+        
+        // If customer info is provided, update or add customer record
+        if (customerName && customerContact) {
+          localStorageHelper.updateCustomer({
+            name: customerName,
+            contact: customerContact,
+            lastVisitDate: now.toISOString(),
+            lastTransactionAmount: total,
+            visitCount: 1, // Will be incremented if customer exists
+            totalSpent: total // Will be added to if customer exists
+          });
+        }
         
         const receipt = {
           id: orderId,
@@ -59,7 +79,9 @@ export const useOrderManagement = (userId: string | undefined) => {
           total,
           date: now,
           paymentMethod,
-          orderNumber
+          orderNumber,
+          customerName,
+          customerContact
         };
         
         setCurrentReceipt(receipt);
