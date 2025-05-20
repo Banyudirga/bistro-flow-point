@@ -1,4 +1,3 @@
-
 // Define types for our local storage data
 export interface LocalStorageUser {
   id: string;
@@ -50,6 +49,9 @@ export interface LocalOrder {
   paymentMethod: string;
   cashierId: string;
 }
+
+// Add the unit conversion import
+import { convertUnit, normalizeUnit } from './unitConversion';
 
 // Keys for storing data
 const STORAGE_KEYS = {
@@ -597,14 +599,36 @@ export const localStorageHelper = {
           const inventoryIndex = inventoryItems.findIndex(inv => inv.id === ingredient.inventoryId);
           
           if (inventoryIndex !== -1) {
-            // Calculate amount to reduce (ingredient amount * order quantity)
-            const reduceAmount = ingredient.amount * orderItem.quantity;
+            const inventoryItem = inventoryItems[inventoryIndex];
+            let reduceAmount = ingredient.amount * orderItem.quantity;
+            
+            // Apply unit conversion if needed
+            if (ingredient.unit && inventoryItem.unit) {
+              const normalizedIngredientUnit = normalizeUnit(ingredient.unit);
+              const normalizedInventoryUnit = normalizeUnit(inventoryItem.unit);
+              
+              // If units are different, try to convert
+              if (normalizedIngredientUnit !== normalizedInventoryUnit) {
+                const convertedAmount = convertUnit(
+                  reduceAmount,
+                  normalizedIngredientUnit,
+                  normalizedInventoryUnit
+                );
+                
+                if (convertedAmount !== null) {
+                  reduceAmount = convertedAmount;
+                  console.log(`Converted ${ingredient.amount} ${ingredient.unit} to ${reduceAmount} ${inventoryItem.unit}`);
+                } else {
+                  console.error(`Failed to convert ${ingredient.amount} ${ingredient.unit} to ${inventoryItem.unit} for ${menuItem.name}`);
+                }
+              }
+            }
             
             // Update inventory quantity
             inventoryItems[inventoryIndex].quantity = Math.max(0, inventoryItems[inventoryIndex].quantity - reduceAmount);
             inventoryItems[inventoryIndex].updated_at = new Date().toISOString();
             
-            console.log(`Reduced ${reduceAmount} ${ingredient.unit || inventoryItems[inventoryIndex].unit} of ${inventoryItems[inventoryIndex].name} from inventory`);
+            console.log(`Reduced ${reduceAmount} ${inventoryItems[inventoryIndex].unit} of ${inventoryItems[inventoryIndex].name} from inventory`);
           }
         });
       }

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/sonner';
 import { localStorageHelper } from '@/utils/localStorage';
+import { normalizeUnit } from '@/utils/unitConversion';
 
 interface AddMenuItemDialogProps {
   open: boolean;
@@ -39,6 +40,9 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
     name: string,
     unit: string
   }>>([]);
+  
+  // Common measurement units
+  const commonUnits = ['g', 'kg', 'ml', 'l', 'pcs', 'buah', 'butir', 'lembar', 'botol'];
   
   // Load categories and inventory items
   useEffect(() => {
@@ -82,10 +86,11 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
     const newIngredients = [...menuIngredients];
     newIngredients[index][field] = value;
     
-    // If changing the inventory item, automatically set the unit
+    // If changing the inventory item, suggest the unit but don't automatically set it
+    // This allows users to specify a different unit for the recipe vs. inventory
     if (field === 'inventoryId') {
       const selectedItem = inventoryItems.find(item => item.id === value);
-      if (selectedItem) {
+      if (selectedItem && !newIngredients[index].unit) {
         newIngredients[index].unit = selectedItem.unit;
       }
     }
@@ -104,11 +109,11 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
     try {
       // Format ingredients for storage
       const ingredients = menuIngredients
-        .filter(ing => ing.inventoryId && parseFloat(ing.amount) > 0)
+        .filter(ing => ing.inventoryId && parseFloat(ing.amount) > 0 && ing.unit)
         .map(ing => ({
           inventoryId: ing.inventoryId,
           amount: parseFloat(ing.amount),
-          unit: ing.unit
+          unit: normalizeUnit(ing.unit)
         }));
       
       // Create new menu item
@@ -257,12 +262,33 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
                     value={ingredient.amount}
                     onChange={(e) => handleIngredientChange(index, 'amount', e.target.value)}
                     placeholder="Jumlah"
-                    className="w-24"
+                    className="w-20"
                   />
                   
-                  <span className="w-20 text-sm text-gray-600 truncate">
-                    {ingredient.unit}
-                  </span>
+                  <Select
+                    value={ingredient.unit}
+                    onValueChange={(value) => handleIngredientChange(index, 'unit', value)}
+                  >
+                    <SelectTrigger className="w-24">
+                      <SelectValue placeholder="Satuan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {commonUnits.map(unit => (
+                        <SelectItem key={unit} value={unit}>
+                          {unit}
+                        </SelectItem>
+                      ))}
+                      {/* Add the inventory item's unit as an option if not already in common units */}
+                      {ingredient.inventoryId && inventoryItems.find(item => item.id === ingredient.inventoryId)?.unit && 
+                       !commonUnits.includes(inventoryItems.find(item => item.id === ingredient.inventoryId)?.unit || '') && (
+                        <SelectItem 
+                          value={inventoryItems.find(item => item.id === ingredient.inventoryId)?.unit || ''}
+                        >
+                          {inventoryItems.find(item => item.id === ingredient.inventoryId)?.unit}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                   
                   <Button
                     type="button"
@@ -276,7 +302,7 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
                 </div>
               ))}
               <p className="text-xs text-gray-500 mt-1">
-                Catatan: Satuan bahan diambil dari data inventaris
+                Catatan: Satuan bahan dapat berbeda dari data inventaris - sistem akan melakukan konversi otomatis
               </p>
             </div>
           </div>

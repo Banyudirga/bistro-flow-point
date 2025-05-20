@@ -26,7 +26,7 @@ export const Cart: React.FC<CartProps> = ({
   onAddItem,
   onCheckout
 }) => {
-  // Calculate total (no tax anymore)
+  // Simple total calculation with no tax
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
   return (
@@ -72,7 +72,7 @@ export const Cart: React.FC<CartProps> = ({
             </div>
           </ScrollArea>
           
-          {/* Cart Summary (no subtotal and tax, just total) */}
+          {/* Cart Summary (no tax, just total) */}
           <div className="mt-auto pt-4">
             <Separator className="mb-4" />
             
