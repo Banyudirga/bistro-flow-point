@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/sonner";
 
 export interface LocalStorageUser {
@@ -22,40 +21,12 @@ export interface LocalOrder {
 }
 
 export interface LocalCustomer {
-  id: string;
   name: string;
   contact: string;
   lastVisitDate: string;
   lastTransactionAmount: number;
   visitCount: number;
   totalSpent: number;
-  notes?: string; // Added notes field
-}
-
-export interface LocalInventoryItem {
-  id: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  costPrice?: number;
-  thresholdQuantity?: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface LocalMenuItem {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  image_url: string | null;
-  description: string | null;
-  is_available: boolean;
-  ingredients?: Array<{
-    inventoryId: string;
-    amount: number;
-    unit: string;
-  }>;
 }
 
 // Function to set user data in localStorage
@@ -100,121 +71,61 @@ const updateCustomer = (customer: LocalCustomer) => {
   
   // Use contact as key since it should be unique
   const contactKey = customer.contact;
-  const customerId = customer.id || `customer-${Date.now()}`;
   
   if (customers[contactKey]) {
     // Customer exists, update values
     customers[contactKey] = {
       ...customers[contactKey],
-      id: customerId,
       name: customer.name,
       lastVisitDate: customer.lastVisitDate,
       lastTransactionAmount: customer.lastTransactionAmount,
       visitCount: customers[contactKey].visitCount + 1,
-      totalSpent: customers[contactKey].totalSpent + customer.totalSpent,
-      notes: customer.notes
+      totalSpent: customers[contactKey].totalSpent + customer.totalSpent
     };
   } else {
     // New customer
-    customers[contactKey] = {
-      ...customer,
-      id: customerId
-    };
+    customers[contactKey] = customer;
   }
   
   localStorage.setItem('pos_customers', JSON.stringify(customers));
 };
 
-// Delete a customer by ID
-const deleteCustomer = (id: string) => {
-  const customersStr = localStorage.getItem('pos_customers');
-  if (!customersStr) return;
-  
-  const customers: Record<string, LocalCustomer> = JSON.parse(customersStr);
-  
-  // Find and delete the customer with matching ID
-  Object.keys(customers).forEach(key => {
-    if (customers[key].id === id) {
-      delete customers[key];
-    }
-  });
-  
-  localStorage.setItem('pos_customers', JSON.stringify(customers));
-};
-
 // Get all customers
-const getCustomers = (): LocalCustomer[] => {
+const getCustomers = () => {
   const customersStr = localStorage.getItem('pos_customers');
-  const customersObj = customersStr ? JSON.parse(customersStr) : {};
-  
-  // Convert object to array for easier use in components
-  return Object.values(customersObj);
+  return customersStr ? JSON.parse(customersStr) : {};
 };
 
 // Function to add an item to inventory
-const addItemToInventory = (item: LocalInventoryItem) => {
-  let inventory = getInventory();
-  inventory.push(item);
-  localStorage.setItem('pos_inventory', JSON.stringify(inventory));
+const addItemToInventory = (item: any) => {
+    let inventory = getInventory();
+    inventory.push(item);
+    localStorage.setItem('pos_inventory', JSON.stringify(inventory));
 };
 
 // Function to get inventory from localStorage
-const getInventory = (): LocalInventoryItem[] => {
-  const inventoryString = localStorage.getItem('pos_inventory');
-  return inventoryString ? JSON.parse(inventoryString) : [];
+const getInventory = () => {
+    const inventoryString = localStorage.getItem('pos_inventory');
+    return inventoryString ? JSON.parse(inventoryString) : [];
 };
 
 // Function to update an item in inventory
-const updateInventoryItem = (updatedItem: LocalInventoryItem) => {
-  let inventory = getInventory();
-  inventory = inventory.map((item: LocalInventoryItem) => {
-    if (item.id === updatedItem.id) {
-      return updatedItem;
-    }
-    return item;
-  });
-  localStorage.setItem('pos_inventory', JSON.stringify(inventory));
+const updateInventoryItem = (updatedItem: any) => {
+    let inventory = getInventory();
+    inventory = inventory.map((item: any) => {
+        if (item.id === updatedItem.id) {
+            return updatedItem;
+        }
+        return item;
+    });
+    localStorage.setItem('pos_inventory', JSON.stringify(inventory));
 };
 
 // Function to delete an item from inventory
 const deleteInventoryItem = (itemId: string) => {
-  let inventory = getInventory();
-  inventory = inventory.filter((item: LocalInventoryItem) => item.id !== itemId);
-  localStorage.setItem('pos_inventory', JSON.stringify(inventory));
-};
-
-// Get inventory items with proper typing
-const getInventoryItems = (): LocalInventoryItem[] => {
-  return getInventory();
-};
-
-// Menu items functions
-const addMenuItem = (menuItem: LocalMenuItem) => {
-  const menuItems = getMenuItems();
-  menuItems.push(menuItem);
-  localStorage.setItem('pos_menu_items', JSON.stringify(menuItems));
-};
-
-const getMenuItems = (): LocalMenuItem[] => {
-  const menuItemsStr = localStorage.getItem('pos_menu_items');
-  return menuItemsStr ? JSON.parse(menuItemsStr) : [];
-};
-
-const updateMenuItem = (updatedItem: LocalMenuItem) => {
-  let menuItems = getMenuItems();
-  menuItems = menuItems.map(item => {
-    if (item.id === updatedItem.id) {
-      return updatedItem;
-    }
-    return item;
-  });
-  localStorage.setItem('pos_menu_items', JSON.stringify(menuItems));
-};
-
-const deleteMenuItem = (itemId: string) => {
-  let menuItems = getMenuItems();
-  menuItems = menuItems.filter(item => item.id !== itemId);
-  localStorage.setItem('pos_menu_items', JSON.stringify(menuItems));
+    let inventory = getInventory();
+    inventory = inventory.filter((item: any) => item.id !== itemId);
+    localStorage.setItem('pos_inventory', JSON.stringify(inventory));
 };
 
 export const localStorageHelper = {
@@ -226,14 +137,8 @@ export const localStorageHelper = {
   clearOrders,
   updateCustomer,
   getCustomers,
-  deleteCustomer,
   addItemToInventory,
   getInventory,
   updateInventoryItem,
-  deleteInventoryItem,
-  getInventoryItems,
-  addMenuItem,
-  getMenuItems,
-  updateMenuItem,
-  deleteMenuItem
+  deleteInventoryItem
 };

@@ -26,7 +26,7 @@ export const useMenuItems = () => {
       // Extract categories
       if (localItems && localItems.length > 0) {
         const uniqueCategories = Array.from(new Set(localItems.map(item => item.category)));
-        setCategories(uniqueCategories as string[]);
+        setCategories(uniqueCategories);
       }
       
       setIsLoading(false);
