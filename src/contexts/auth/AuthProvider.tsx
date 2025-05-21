@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: storedUser.email,
           firstName: storedUser.firstName,
           lastName: storedUser.lastName,
-          role: storedUser.role
+          role: storedUser.role as UserRole // Cast to UserRole to ensure type compatibility
         });
       } else {
         console.log("No user found in localStorage");
@@ -71,8 +71,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Store in localStorage
         localStorageHelper.setUser(newUser);
         
-        // Update state
-        setUser(newUser);
+        // Update state - Ensure role is properly cast as UserRole
+        setUser({
+          id: newUser.id,
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          role: newUser.role as UserRole
+        });
+        
         console.log("Sign in successful for:", newUser.email);
         toast.success(`Welcome back, ${newUser.firstName}`);
         

@@ -1,10 +1,12 @@
+
 // Define types for our local storage data
+import { UserRole } from '@/contexts/auth/types';
 export interface LocalStorageUser {
   id: string;
   email: string;
   firstName: string | null;
   lastName: string | null;
-  role: string;
+  role: UserRole;
 }
 
 export interface MenuIngredient {
@@ -48,6 +50,8 @@ export interface LocalOrder {
   date: string;
   paymentMethod: string;
   cashierId: string;
+  customerName?: string;
+  customerContact?: string;
 }
 
 // Add the unit conversion import
