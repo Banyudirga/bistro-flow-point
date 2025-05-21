@@ -65,12 +65,19 @@ export default {
 				},
 				// POS specific colors
 				pos: {
-					primary: '#0D9488', // teal
-					secondary: '#F59E0B', // amber
-					dark: '#1E293B', // slate-800
-					light: '#F8FAFC', // slate-50
+					primary: '#ea384c', // red
+					secondary: '#000000e6', // black
+					dark: '#222222', // dark gray
+					light: '#FFFFFF', // white
 					success: '#10B981', // emerald-500
 					error: '#EF4444', // red-500
+				},
+				// Theme colors for our red and black theme
+				seblak: {
+					red: '#ea384c',
+					black: '#000000e6',
+					darkgray: '#222222',
+					white: '#FFFFFF',
 				}
 			},
 			borderRadius: {
@@ -99,6 +106,9 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
+			},
+			fontFamily: {
+				seblak: ['Anton', 'sans-serif'],
 			}
 		}
 	},

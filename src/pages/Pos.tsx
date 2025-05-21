@@ -34,7 +34,7 @@ const Pos = () => {
   // Wait until authentication is fully initialized
   if (!initialized || loading) {
     return <div className="flex items-center justify-center h-full">
-      <p>Memuat autentikasi...</p>
+      <p className="text-white">Memuat autentikasi...</p>
     </div>;
   }
 
@@ -83,16 +83,16 @@ const Pos = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="text-2xl font-bold mb-4">SEBLAK LISTYANING</div>
+      <div className="text-4xl font-bold mb-4 font-seblak text-seblak-red">SEBLAK LISTYANING</div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
         {/* Menu Section */}
         <div className="lg:col-span-2">
-          <Card className="h-full">
+          <Card className="h-full border-seblak-red bg-seblak-black text-white">
             <CardContent className="p-4 h-full">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
-                  Memuat menu...
+                  <p className="text-white">Memuat menu...</p>
                 </div>
               ) : menuItems && menuItems.length > 0 ? (
                 <MenuCategories 
@@ -102,7 +102,7 @@ const Pos = () => {
                   onMenuItemsChange={refreshMenuItems}
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                <div className="flex flex-col items-center justify-center h-full text-white">
                   <p>Tidak ada menu ditemukan.</p>
                   <p className="text-sm">Tambahkan menu di halaman inventaris.</p>
                 </div>
@@ -113,7 +113,7 @@ const Pos = () => {
         
         {/* Cart Section */}
         <div>
-          <Card className="h-full flex flex-col">
+          <Card className="h-full flex flex-col border-seblak-red bg-seblak-black text-white">
             <CardContent className="p-4 flex flex-col h-full">
               <Cart 
                 items={cart}

@@ -37,8 +37,8 @@ const Login = () => {
   // If auth is still loading, don't show redirects or login form yet
   if (loading && !initialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
-        <p>Loading authentication status...</p>
+      <div className="min-h-screen flex items-center justify-center bg-seblak-black p-4">
+        <p className="text-white">Loading authentication status...</p>
       </div>
     );
   }
@@ -96,43 +96,46 @@ const Login = () => {
   };
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">SEBLAK LISTYANING</CardTitle>
-          <CardDescription className="text-center">
+    <div className="min-h-screen flex items-center justify-center bg-seblak-black p-4">
+      <Card className="w-full max-w-md border-seblak-red">
+        <div className="absolute inset-0 bg-gradient-to-br from-seblak-black via-seblak-black to-seblak-red opacity-50 rounded-lg z-0"></div>
+        <CardHeader className="relative z-10">
+          <CardTitle className="text-4xl text-center font-seblak text-seblak-red">SEBLAK LISTYANING</CardTitle>
+          <CardDescription className="text-center text-white">
             {isSignUp ? 'Create an account to get started' : 'Sign in to your account to continue'}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 relative z-10">
             {isSignUp && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="firstName" className="text-white">First Name</Label>
                   <Input
                     id="firstName"
                     placeholder="John"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     required
+                    className="bg-seblak-black border-seblak-red text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName" className="text-white">Last Name</Label>
                   <Input
                     id="lastName"
                     placeholder="Doe"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     required
+                    className="bg-seblak-black border-seblak-red text-white"
                   />
                 </div>
               </div>
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-white">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -140,11 +143,12 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="bg-seblak-black border-seblak-red text-white"
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-white">Password</Label>
               </div>
               <Input
                 id="password"
@@ -153,11 +157,12 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="bg-seblak-black border-seblak-red text-white"
               />
             </div>
             
             {!isSignUp && (
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-white">
                 <p>Demo accounts:</p>
                 <ul className="list-disc list-inside ml-2 mt-1">
                   <li>owner@example.com / password</li>
@@ -167,10 +172,10 @@ const Login = () => {
               </div>
             )}
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 relative z-10">
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full bg-seblak-red hover:bg-red-700 text-white" 
               disabled={isLoading}
             >
               {isLoading ? (isSignUp ? "Creating account..." : "Signing in...") : (isSignUp ? "Sign up" : "Sign in")}
@@ -178,7 +183,7 @@ const Login = () => {
             <Button
               type="button"
               variant="ghost"
-              className="w-full"
+              className="w-full text-white hover:text-seblak-red"
               onClick={toggleMode}
             >
               {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
