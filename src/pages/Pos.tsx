@@ -83,7 +83,7 @@ const Pos = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="text-2xl font-bold mb-4">Kasir</div>
+      <div className="text-2xl font-bold mb-4">SEBLAK LISTYANING</div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
         {/* Menu Section */}

@@ -99,7 +99,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Restaurant POS</CardTitle>
+          <CardTitle className="text-2xl text-center">SEBLAK LISTYANING</CardTitle>
           <CardDescription className="text-center">
             {isSignUp ? 'Create an account to get started' : 'Sign in to your account to continue'}
           </CardDescription>
