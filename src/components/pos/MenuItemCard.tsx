@@ -19,7 +19,7 @@ interface MenuItemCardProps {
 export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, onSelect, isEditMode = false }) => {
   return (
     <div 
-      className={`border rounded-lg p-2 cursor-pointer ${isEditMode ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-gray-50'} transition-colors text-center relative`}
+      className={`border rounded-lg p-2 cursor-pointer ${isEditMode ? 'bg-amber-50 hover:bg-amber-100 text-black' : 'bg-seblak-black hover:bg-gray-900 text-white'} transition-colors text-center relative border-seblak-red`}
       onClick={() => onSelect(item)}
     >
       {isEditMode && (
@@ -36,9 +36,9 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, onSelect, isEd
         />
       </div>
       <div className="font-medium">{item.name}</div>
-      <div className="text-green-600">Rp{item.price.toLocaleString('id-ID')}</div>
+      <div className="text-seblak-red font-bold">Rp{item.price.toLocaleString('id-ID')}</div>
       {item.description && (
-        <div className="text-xs text-gray-600 mt-1 line-clamp-2">{item.description}</div>
+        <div className="text-xs text-gray-400 mt-1 line-clamp-2">{item.description}</div>
       )}
     </div>
   );
