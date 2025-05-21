@@ -1,4 +1,63 @@
+
 import { MenuItem } from '@/hooks/useMenuItems';
+
+// Define all required interfaces
+export interface LocalMenuItem extends MenuItem {
+  ingredients?: Array<{
+    inventoryId: string;
+    amount: number;
+    unit: string;
+  }>;
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  cost_price: number;
+  threshold_quantity: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  contact: string;
+  lastVisitDate: string;
+  lastTransactionAmount: number;
+  visitCount: number;
+  totalSpent: number;
+  notes?: string;
+}
+
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  items: OrderItem[];
+  total: number;
+  date: string;
+  paymentMethod: string;
+  cashierId: string;
+  customerName?: string;
+  customerContact?: string;
+}
+
+export interface LocalStorageUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
 
 class LocalStorageHelper {
   private localStorageKey = 'seblak-listyaning';
@@ -233,9 +292,131 @@ class LocalStorageHelper {
     this.setItem('menuItems', items);
   }
 
+  // Add a new menu item
+  public addMenuItem(item: LocalMenuItem): void {
+    const menuItems = this.getMenuItems();
+    menuItems.push(item);
+    this.setMenuItems(menuItems);
+  }
+
+  // Update a menu item
+  public updateMenuItem(updatedItem: LocalMenuItem): void {
+    const menuItems = this.getMenuItems();
+    const index = menuItems.findIndex(item => item.id === updatedItem.id);
+    if (index !== -1) {
+      menuItems[index] = updatedItem;
+      this.setMenuItems(menuItems);
+    }
+  }
+
+  // Delete a menu item
+  public deleteMenuItem(id: string): void {
+    const menuItems = this.getMenuItems();
+    const filteredItems = menuItems.filter(item => item.id !== id);
+    this.setMenuItems(filteredItems);
+  }
+
   // Clear menu items from local storage
   public clearMenuItems(): void {
     this.removeItem('menuItems');
+  }
+
+  // Inventory items methods
+  public getInventoryItems(): InventoryItem[] {
+    const items = this.getItem<InventoryItem[]>('inventoryItems');
+    return items || [];
+  }
+
+  public addInventoryItem(item: InventoryItem): void {
+    const items = this.getInventoryItems();
+    items.push(item);
+    this.setItem('inventoryItems', items);
+  }
+
+  public updateInventoryItem(updatedItem: InventoryItem): void {
+    const items = this.getInventoryItems();
+    const index = items.findIndex(item => item.id === updatedItem.id);
+    if (index !== -1) {
+      items[index] = updatedItem;
+      this.setItem('inventoryItems', items);
+    }
+  }
+
+  public deleteInventoryItem(id: string): void {
+    const items = this.getInventoryItems();
+    const filteredItems = items.filter(item => item.id !== id);
+    this.setItem('inventoryItems', filteredItems);
+  }
+
+  // Customer methods
+  public getCustomers(): Customer[] {
+    const customers = this.getItem<Customer[]>('customers');
+    return customers || [];
+  }
+
+  public updateCustomer(customerData: Omit<Customer, 'id'>): Customer {
+    const customers = this.getCustomers();
+    const existingCustomerIndex = customers.findIndex(c => c.contact === customerData.contact);
+    
+    if (existingCustomerIndex >= 0) {
+      // Update existing customer
+      const existingCustomer = customers[existingCustomerIndex];
+      const updatedCustomer: Customer = {
+        ...existingCustomer,
+        name: customerData.name,
+        contact: customerData.contact,
+        lastVisitDate: customerData.lastVisitDate,
+        lastTransactionAmount: customerData.lastTransactionAmount,
+        visitCount: existingCustomer.visitCount + 1,
+        totalSpent: existingCustomer.totalSpent + customerData.lastTransactionAmount,
+        notes: customerData.notes || existingCustomer.notes
+      };
+      
+      customers[existingCustomerIndex] = updatedCustomer;
+      this.setItem('customers', customers);
+      return updatedCustomer;
+    } else {
+      // Create new customer
+      const newCustomer: Customer = {
+        id: `customer-${Date.now()}`,
+        ...customerData
+      };
+      
+      customers.push(newCustomer);
+      this.setItem('customers', customers);
+      return newCustomer;
+    }
+  }
+
+  public deleteCustomer(id: string): void {
+    const customers = this.getCustomers();
+    const filteredCustomers = customers.filter(customer => customer.id !== id);
+    this.setItem('customers', filteredCustomers);
+  }
+
+  // Order methods
+  public getOrders(): Order[] {
+    const orders = this.getItem<Order[]>('orders');
+    return orders || [];
+  }
+
+  public addOrder(order: Order): void {
+    const orders = this.getOrders();
+    orders.push(order);
+    this.setItem('orders', orders);
+  }
+
+  // User methods
+  public getUser(): LocalStorageUser | null {
+    return this.getItem<LocalStorageUser>('user');
+  }
+
+  public setUser(user: LocalStorageUser): void {
+    this.setItem('user', user);
+  }
+
+  public clearUser(): void {
+    this.removeItem('user');
   }
 }
 
