@@ -10,6 +10,11 @@ export interface MenuItem {
   image_url: string | null;
   description: string | null;
   is_available: boolean | null;
+  ingredients?: Array<{
+    inventoryId: string;
+    amount: number;
+    unit: string;
+  }>;
 }
 
 // Category mapping (original DB names to display names)
