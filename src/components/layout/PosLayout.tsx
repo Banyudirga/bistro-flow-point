@@ -44,7 +44,7 @@ export const PosLayout: React.FC = () => {
         <Sidebar className="h-screen">
           <SidebarHeader className="p-4 flex items-center">
             <div className="text-sidebar-foreground text-2xl font-bold">
-              RestaurantPOS
+              SEBLAK LISTYANING
             </div>
           </SidebarHeader>
           

@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { localStorageHelper, LocalMenuItem } from '@/utils/localStorage';
+import { localStorageHelper } from '@/utils/localStorage';
 
 export interface MenuItem {
   id: string;
@@ -11,6 +11,22 @@ export interface MenuItem {
   description: string | null;
   is_available: boolean | null;
 }
+
+// Category mapping (original DB names to display names)
+const categoryMapOrigToDisplay: Record<string, string> = {
+  'Makanan Utama': 'SEBLAK',
+  'Makanan Pendamping': 'MAKANAN',
+  'Minuman': 'MINUMAN',
+  'Makanan Penutup': 'CAMILAN'
+};
+
+// Category mapping (display names to original DB names)
+const categoryMapDisplayToOrig: Record<string, string> = {
+  'SEBLAK': 'Makanan Utama',
+  'MAKANAN': 'Makanan Pendamping',
+  'MINUMAN': 'Minuman',
+  'CAMILAN': 'Makanan Penutup'
+};
 
 export const useMenuItems = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -42,11 +58,23 @@ export const useMenuItems = () => {
     loadMenuItems();
   }, [loadMenuItems]);
 
+  // Convert display name to original category when needed (for creating/editing items)
+  const getOriginalCategory = (displayName: string): string => {
+    return categoryMapDisplayToOrig[displayName] || displayName;
+  };
+
+  // Convert original category to display name when needed
+  const getDisplayCategory = (originalName: string): string => {
+    return categoryMapOrigToDisplay[originalName] || originalName;
+  };
+
   return {
     menuItems,
     categories,
     isLoading,
     error,
-    refreshMenuItems: loadMenuItems
+    refreshMenuItems: loadMenuItems,
+    getOriginalCategory,
+    getDisplayCategory
   };
 };

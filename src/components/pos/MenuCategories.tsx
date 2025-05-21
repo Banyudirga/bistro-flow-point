@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit } from 'lucide-react';
@@ -29,13 +29,33 @@ interface MenuCategoriesProps {
   onMenuItemsChange: () => void;
 }
 
+// Category mapping for display
+const categoryMap: Record<string, string> = {
+  'Makanan Utama': 'SEBLAK',
+  'Makanan Pendamping': 'MAKANAN',
+  'Minuman': 'MINUMAN',
+  'Makanan Penutup': 'CAMILAN'
+};
+
+// Sort order for categories
+const categoryOrder: Record<string, number> = {
+  'SEBLAK': 1,
+  'MAKANAN': 2,
+  'CAMILAN': 3,
+  'MINUMAN': 4
+};
+
 export const MenuCategories: React.FC<MenuCategoriesProps> = ({
   categories,
   menuItems,
   onSelectItem,
   onMenuItemsChange
 }) => {
-  const [activeCategory, setActiveCategory] = useState<string>(categories[0] || '');
+  // Map original categories to new display names
+  const displayCategories = categories.map(cat => categoryMap[cat] || cat);
+  
+  // Set the initial active category to the first one after sorting
+  const [activeCategory, setActiveCategory] = useState<string>('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedMenuItemId, setSelectedMenuItemId] = useState<string | undefined>();
@@ -43,6 +63,24 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
   const { user } = useAuth();
   
   const isOwner = user?.role === 'owner';
+
+  // Set initial active category based on sort order
+  useEffect(() => {
+    if (categories.length > 0) {
+      // Get the display name of the first category after sorting
+      const sortedCategories = [...categories].sort((a, b) => {
+        const displayA = categoryMap[a] || a;
+        const displayB = categoryMap[b] || b;
+        return (categoryOrder[displayA] || 999) - (categoryOrder[displayB] || 999);
+      });
+      setActiveCategory(sortedCategories[0]);
+    }
+  }, [categories]);
+
+  // Handle active category change - we need to map display name back to original
+  const handleCategoryChange = (value: string) => {
+    setActiveCategory(value);
+  };
 
   // Filter items by active category
   const filteredItems = menuItems.filter(item => 
@@ -66,6 +104,13 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
   };
+
+  // Sort categories for display
+  const sortedCategories = [...categories].sort((a, b) => {
+    const displayA = categoryMap[a] || a;
+    const displayB = categoryMap[b] || b;
+    return (categoryOrder[displayA] || 999) - (categoryOrder[displayB] || 999);
+  });
 
   return (
     <div className="h-full flex flex-col">
@@ -91,24 +136,24 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
 
       <Tabs 
         value={activeCategory} 
-        onValueChange={setActiveCategory} 
+        onValueChange={handleCategoryChange} 
         className="flex-1 flex flex-col"
       >
         <div className="border-b overflow-x-auto">
           <TabsList className="w-full justify-start h-auto">
-            {categories.map(category => (
+            {sortedCategories.map(category => (
               <TabsTrigger 
                 key={category} 
                 value={category}
                 className="px-4 py-2 whitespace-nowrap"
               >
-                {category}
+                {categoryMap[category] || category}
               </TabsTrigger>
             ))}
           </TabsList>
         </div>
 
-        {categories.map(category => (
+        {sortedCategories.map(category => (
           <TabsContent 
             key={category} 
             value={category} 
