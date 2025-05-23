@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -9,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/sonner';
 import { localStorageHelper } from '@/utils/localStorage';
 import { normalizeUnit } from '@/utils/unitConversion';
+import { useMenuItems } from '@/hooks/useMenuItems';
 
 interface AddMenuItemDialogProps {
   open: boolean;
@@ -21,6 +21,9 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
   onOpenChange,
   onMenuItemAdded
 }) => {
+  // Use the hook to get existing categories
+  const { categories: existingCategories, getOriginalCategory } = useMenuItems();
+  
   const [categories, setCategories] = useState<string[]>([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -55,8 +58,8 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
       setImageUrl('');
       setMenuIngredients([{ inventoryId: '', amount: '1', unit: '' }]);
       
-      // Set hardcoded categories
-      setCategories(['SEBLAK', 'MAKANAN', 'MINUMAN', 'CAMILAN']);
+      // Use categories from the useMenuItems hook
+      setCategories(existingCategories);
       
       // Load inventory items
       const inventoryItems = localStorageHelper.getInventoryItems();
@@ -66,7 +69,7 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
         unit: item.unit
       })));
     }
-  }, [open]);
+  }, [open, existingCategories]);
   
   const handleAddMenuIngredient = () => {
     setMenuIngredients([...menuIngredients, { inventoryId: '', amount: '1', unit: '' }]);
@@ -114,19 +117,12 @@ export const AddMenuItemDialog: React.FC<AddMenuItemDialogProps> = ({
           unit: normalizeUnit(ing.unit)
         }));
       
-      // Create new menu item - map display names to original DB names
-      const categoryMapping: Record<string, string> = {
-        'SEBLAK': 'Makanan Utama',
-        'MAKANAN': 'Makanan Pendamping',
-        'MINUMAN': 'Minuman',
-        'CAMILAN': 'Makanan Penutup'
-      };
-      
+      // Create new menu item
       const newMenuItem = {
         id: `menu-${Date.now()}`,
         name,
         price: parseFloat(price),
-        category: categoryMapping[category] || category,
+        category: getOriginalCategory(category), // Convert display name to original category
         description: description || null,
         image_url: imageUrl || null,
         is_available: true,

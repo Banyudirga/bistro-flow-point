@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -50,10 +51,8 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
   onSelectItem,
   onMenuItemsChange
 }) => {
-  // Map original categories to new display names and filter out "Makanan" category
-  const displayCategories = categories
-    .map(cat => categoryMap[cat] || cat)
-    .filter(cat => cat !== "Makanan"); // Filter out "Makanan" category (but keep "MAKANAN")
+  // Map original categories to new display names
+  const displayCategories = categories.map(cat => categoryMap[cat] || cat);
   
   // Set the initial active category to the first one after sorting
   const [activeCategory, setActiveCategory] = useState<string>('');
@@ -69,13 +68,11 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
   useEffect(() => {
     if (categories.length > 0) {
       // Get the display name of the first category after sorting
-      const sortedCategories = [...categories]
-        .filter(cat => categoryMap[cat] !== "Makanan") // Filter out "Makanan" category
-        .sort((a, b) => {
-          const displayA = categoryMap[a] || a;
-          const displayB = categoryMap[b] || b;
-          return (categoryOrder[displayA] || 999) - (categoryOrder[displayB] || 999);
-        });
+      const sortedCategories = [...categories].sort((a, b) => {
+        const displayA = categoryMap[a] || a;
+        const displayB = categoryMap[b] || b;
+        return (categoryOrder[displayA] || 999) - (categoryOrder[displayB] || 999);
+      });
       setActiveCategory(sortedCategories[0]);
     }
   }, [categories]);
@@ -108,14 +105,12 @@ export const MenuCategories: React.FC<MenuCategoriesProps> = ({
     setIsEditMode(!isEditMode);
   };
 
-  // Sort categories for display and filter out "Makanan"
-  const sortedCategories = [...categories]
-    .filter(cat => categoryMap[cat] !== "Makanan") // Filter out "Makanan" category
-    .sort((a, b) => {
-      const displayA = categoryMap[a] || a;
-      const displayB = categoryMap[b] || b;
-      return (categoryOrder[displayA] || 999) - (categoryOrder[displayB] || 999);
-    });
+  // Sort categories for display
+  const sortedCategories = [...categories].sort((a, b) => {
+    const displayA = categoryMap[a] || a;
+    const displayB = categoryMap[b] || b;
+    return (categoryOrder[displayA] || 999) - (categoryOrder[displayB] || 999);
+  });
 
   return (
     <div className="h-full flex flex-col">
