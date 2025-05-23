@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { CartItem } from './CartItem';
@@ -26,8 +26,23 @@ export const Cart: React.FC<CartProps> = ({
   onAddItem,
   onCheckout
 }) => {
+  // Reference to the scroll area
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
   // Simple total calculation with no tax
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  // Scroll to bottom when items change
+  useEffect(() => {
+    if (scrollAreaRef.current && items.length > 0) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        setTimeout(() => {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }, 100);
+      }
+    }
+  }, [items]);
   
   return (
     <div className="flex flex-col h-full">
@@ -59,7 +74,7 @@ export const Cart: React.FC<CartProps> = ({
         </div>
       ) : (
         <>
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1" ref={scrollAreaRef}>
             <div className="space-y-3 pr-3">
               {items.map(item => (
                 <CartItem
