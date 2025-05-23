@@ -112,7 +112,7 @@ class LocalStorageHelper {
     }
   }
 
-  // Get default menu items when none are available
+  // Get default menu items with proper food images
   private getDefaultMenuItems(): MenuItem[] {
     return [
       // SEBLAK Category (Makanan Utama)
@@ -121,7 +121,7 @@ class LocalStorageHelper {
         name: 'Seblak Original',
         price: 15000,
         category: 'Makanan Utama',
-        image_url: 'https://via.placeholder.com/100x100?text=Seblak+Original',
+        image_url: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=300&h=300&fit=crop&crop=center',
         description: 'Seblak dengan bumbu khas pedas, kerupuk, dan sayuran',
         is_available: true
       },
@@ -130,7 +130,7 @@ class LocalStorageHelper {
         name: 'Seblak Tulang',
         price: 20000,
         category: 'Makanan Utama',
-        image_url: 'https://via.placeholder.com/100x100?text=Seblak+Tulang',
+        image_url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=300&fit=crop&crop=center',
         description: 'Seblak dengan tambahan tulang ayam yang gurih',
         is_available: true
       },
@@ -139,7 +139,7 @@ class LocalStorageHelper {
         name: 'Seblak Ceker',
         price: 18000,
         category: 'Makanan Utama',
-        image_url: 'https://via.placeholder.com/100x100?text=Seblak+Ceker',
+        image_url: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=300&h=300&fit=crop&crop=center',
         description: 'Seblak dengan tambahan ceker ayam',
         is_available: true
       },
@@ -148,7 +148,7 @@ class LocalStorageHelper {
         name: 'Seblak Seafood',
         price: 25000,
         category: 'Makanan Utama',
-        image_url: 'https://via.placeholder.com/100x100?text=Seblak+Seafood',
+        image_url: 'https://images.unsplash.com/photo-1559847844-d721426d6edc?w=300&h=300&fit=crop&crop=center',
         description: 'Seblak dengan tambahan udang, cumi, dan bakso ikan',
         is_available: true
       },
@@ -157,7 +157,7 @@ class LocalStorageHelper {
         name: 'Seblak Mie',
         price: 17000,
         category: 'Makanan Utama',
-        image_url: 'https://via.placeholder.com/100x100?text=Seblak+Mie',
+        image_url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&h=300&fit=crop&crop=center',
         description: 'Seblak dengan tambahan mie instan',
         is_available: true
       },
@@ -168,7 +168,7 @@ class LocalStorageHelper {
         name: 'Baso Aci',
         price: 15000,
         category: 'Makanan Pendamping',
-        image_url: 'https://via.placeholder.com/100x100?text=Baso+Aci',
+        image_url: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=300&h=300&fit=crop&crop=center',
         description: 'Bakso dari tepung aci dengan kuah pedas',
         is_available: true
       },
@@ -177,7 +177,7 @@ class LocalStorageHelper {
         name: 'Cireng Rujak',
         price: 12000,
         category: 'Makanan Pendamping',
-        image_url: 'https://via.placeholder.com/100x100?text=Cireng+Rujak',
+        image_url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=300&h=300&fit=crop&crop=center',
         description: 'Cireng dengan saus rujak pedas manis',
         is_available: true
       },
@@ -186,7 +186,7 @@ class LocalStorageHelper {
         name: 'Cimol',
         price: 10000,
         category: 'Makanan Pendamping',
-        image_url: 'https://via.placeholder.com/100x100?text=Cimol',
+        image_url: 'https://images.unsplash.com/photo-1563379091339-03246963d29b?w=300&h=300&fit=crop&crop=center',
         description: 'Bola-bola tapioka yang garing di luar, lembut di dalam',
         is_available: true
       },
@@ -195,7 +195,7 @@ class LocalStorageHelper {
         name: 'Makaroni Goreng',
         price: 12000,
         category: 'Makanan Pendamping',
-        image_url: 'https://via.placeholder.com/100x100?text=Makaroni+Goreng',
+        image_url: 'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=300&h=300&fit=crop&crop=center',
         description: 'Makaroni goreng dengan bumbu pedas',
         is_available: true
       },
@@ -206,7 +206,7 @@ class LocalStorageHelper {
         name: 'Es Teh Manis',
         price: 5000,
         category: 'Minuman',
-        image_url: 'https://via.placeholder.com/100x100?text=Es+Teh+Manis',
+        image_url: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=300&h=300&fit=crop&crop=center',
         description: 'Teh manis dengan es batu',
         is_available: true
       },
@@ -215,7 +215,7 @@ class LocalStorageHelper {
         name: 'Es Jeruk',
         price: 7000,
         category: 'Minuman',
-        image_url: 'https://via.placeholder.com/100x100?text=Es+Jeruk',
+        image_url: 'https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=300&h=300&fit=crop&crop=center',
         description: 'Air jeruk segar dengan es batu',
         is_available: true
       },
@@ -224,7 +224,7 @@ class LocalStorageHelper {
         name: 'Es Kelapa',
         price: 10000,
         category: 'Minuman',
-        image_url: 'https://via.placeholder.com/100x100?text=Es+Kelapa',
+        image_url: 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=300&h=300&fit=crop&crop=center',
         description: 'Air kelapa muda segar dengan es batu',
         is_available: true
       },
@@ -233,7 +233,7 @@ class LocalStorageHelper {
         name: 'Es Buah',
         price: 12000,
         category: 'Minuman',
-        image_url: 'https://via.placeholder.com/100x100?text=Es+Buah',
+        image_url: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=300&fit=crop&crop=center',
         description: 'Campuran buah-buahan dengan sirup dan susu',
         is_available: true
       },
@@ -242,7 +242,7 @@ class LocalStorageHelper {
         name: 'Es Campur',
         price: 15000,
         category: 'Minuman',
-        image_url: 'https://via.placeholder.com/100x100?text=Es+Campur',
+        image_url: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&h=300&fit=crop&crop=center',
         description: 'Campuran cincau, kolang-kaling, dan alpukat dengan susu',
         is_available: true
       },
@@ -253,7 +253,7 @@ class LocalStorageHelper {
         name: 'Kripik Singkong',
         price: 8000,
         category: 'Makanan Penutup',
-        image_url: 'https://via.placeholder.com/100x100?text=Kripik+Singkong',
+        image_url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop&crop=center',
         description: 'Keripik singkong renyah dengan berbagai rasa',
         is_available: true
       },
@@ -262,7 +262,7 @@ class LocalStorageHelper {
         name: 'Kripik Pisang',
         price: 8000,
         category: 'Makanan Penutup',
-        image_url: 'https://via.placeholder.com/100x100?text=Kripik+Pisang',
+        image_url: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300&h=300&fit=crop&crop=center',
         description: 'Keripik pisang renyah dengan rasa manis',
         is_available: true
       },
@@ -271,7 +271,7 @@ class LocalStorageHelper {
         name: 'Kue Cubit',
         price: 10000,
         category: 'Makanan Penutup',
-        image_url: 'https://via.placeholder.com/100x100?text=Kue+Cubit',
+        image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300&h=300&fit=crop&crop=center',
         description: 'Kue tradisional dengan berbagai topping',
         is_available: true
       },
@@ -280,7 +280,7 @@ class LocalStorageHelper {
         name: 'Pisang Goreng',
         price: 10000,
         category: 'Makanan Penutup',
-        image_url: 'https://via.placeholder.com/100x100?text=Pisang+Goreng',
+        image_url: 'https://images.unsplash.com/photo-1587132137056-bfbf0166836e?w=300&h=300&fit=crop&crop=center',
         description: 'Pisang goreng crispy dengan toping keju atau coklat',
         is_available: true
       },
@@ -324,7 +324,79 @@ class LocalStorageHelper {
   // Inventory items methods
   public getInventoryItems(): InventoryItem[] {
     const items = this.getItem<InventoryItem[]>('inventoryItems');
-    return items || [];
+    if (!items) {
+      // Initialize with default inventory items
+      const defaultItems = this.getDefaultInventoryItems();
+      this.setItem('inventoryItems', defaultItems);
+      return defaultItems;
+    }
+    return items;
+  }
+
+  // Get default inventory items
+  private getDefaultInventoryItems(): InventoryItem[] {
+    const baseItems = [
+      'air vit/air mineral', 'ayam fillet', 'baso ikan', 'baso salmon', 'baso sapi',
+      'bawang goreng', 'bawang merah', 'bawang putih', 'Boso ikan salmon', 'cabe ijo',
+      'cabe kering', 'cabe merah', 'cabe rawit merah', 'ceker', 'cikuwa',
+      'crabstick', 'cumi', 'cumi cumian', 'daun', 'dimsum',
+      'dumpling ayam', 'dumpling keju', 'Filet', 'fishroll', 'goodday moccacino',
+      'goodday capucino', 'jamur kuping', 'jamur enoki', 'jeruk limau', 'Kecap bango',
+      'kencur', 'kerupuk mawar putih', 'kerupuk putih warna warni pinggir', 'kerupuk udang merah', 'kobe',
+      'Krupuk orange 1 ba', 'kue ikan', 'Kue ikan pedas', 'kulit', 'kwetiau',
+      'lidah', 'makaroni pipa', 'mama lemon', 'mentega', 'mie soto',
+      'mie goreng Indomie', 'minuman', 'odeng merah', 'odeng putih', 'okado',
+      'otak\' Singapur', 'paha', 'paha penyet', 'plastik krupuk', 'plastik seblak',
+      'racik', 'rawit ijo', 'rawit merah', 'royco', 'Royco sapi',
+      'Saos Belibis', 'saos cabe', 'Sasa 1', 'sawi ijo', 'sawi putih',
+      'sayap', 'sayur', 'sedotan', 'sosis besar', 'sosis kecil panjang',
+      'sosis yona', 'steropom mangkuk', 'Sukro kencur', 'tepung roti', 'Timun',
+      'Topu', 'tulang', 'twinster', 'udang', 'vit', 'Wijen'
+    ];
+
+    return baseItems.map((name, index) => ({
+      id: `inv-${Date.now()}-${index}`,
+      name,
+      quantity: 100,
+      unit: this.getDefaultUnit(name),
+      cost_price: this.getDefaultPrice(name),
+      threshold_quantity: 10,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+  }
+
+  // Get default unit based on item name
+  private getDefaultUnit(name: string): string {
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('air') || lowerName.includes('minuman') || lowerName.includes('goodday')) return 'ml';
+    if (lowerName.includes('plastik') || lowerName.includes('sedotan') || lowerName.includes('steropom')) return 'pcs';
+    if (lowerName.includes('kerupuk') || lowerName.includes('krupuk')) return 'g';
+    if (lowerName.includes('ayam') || lowerName.includes('fillet') || lowerName.includes('paha') || lowerName.includes('sayap') || lowerName.includes('ceker') || lowerName.includes('tulang')) return 'pcs';
+    if (lowerName.includes('baso') || lowerName.includes('dumpling') || lowerName.includes('dimsum')) return 'pcs';
+    if (lowerName.includes('sosis') || lowerName.includes('crabstick') || lowerName.includes('fishroll')) return 'pcs';
+    if (lowerName.includes('jamur') || lowerName.includes('sayur') || lowerName.includes('sawi') || lowerName.includes('timun')) return 'g';
+    if (lowerName.includes('bawang') || lowerName.includes('cabe') || lowerName.includes('rawit')) return 'g';
+    if (lowerName.includes('saos') || lowerName.includes('kecap')) return 'ml';
+    if (lowerName.includes('tepung') || lowerName.includes('mentega')) return 'g';
+    if (lowerName.includes('mie') || lowerName.includes('makaroni') || lowerName.includes('kwetiau')) return 'g';
+    return 'pcs';
+  }
+
+  // Get default price based on item name
+  private getDefaultPrice(name: string): number {
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('ayam') || lowerName.includes('fillet')) return 15000;
+    if (lowerName.includes('udang') || lowerName.includes('cumi')) return 20000;
+    if (lowerName.includes('baso') || lowerName.includes('sosis')) return 5000;
+    if (lowerName.includes('kerupuk') || lowerName.includes('krupuk')) return 2000;
+    if (lowerName.includes('sayur') || lowerName.includes('jamur')) return 3000;
+    if (lowerName.includes('bawang') || lowerName.includes('cabe')) return 8000;
+    if (lowerName.includes('saos') || lowerName.includes('kecap')) return 12000;
+    if (lowerName.includes('plastik') || lowerName.includes('sedotan')) return 500;
+    if (lowerName.includes('air') || lowerName.includes('minuman')) return 3000;
+    if (lowerName.includes('goodday')) return 8000;
+    return 5000;
   }
 
   public addInventoryItem(item: InventoryItem): void {
