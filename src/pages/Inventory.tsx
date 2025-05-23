@@ -103,10 +103,285 @@ const Inventory = () => {
   const [error, setError] = useState<Error | null>(null);
   const [activeCategory, setActiveCategory] = useState('SEMUA');
 
-  // Load inventory items from localStorage
+  // Load inventory items from localStorage and add example items if there are none for each category
   useEffect(() => {
     try {
-      const inventoryItems = localStorageHelper.getInventoryItems();
+      let inventoryItems = localStorageHelper.getInventoryItems();
+      
+      // Check if we need to add example items
+      if (inventoryItems.length === 0) {
+        // Example items for each category
+        const exampleItems: InventoryItem[] = [
+          // BAHAN category examples
+          {
+            id: `inv-bahan-1-${Date.now()}`,
+            name: 'Ayam Fillet',
+            quantity: 5,
+            unit: 'kg',
+            cost_price: 45000,
+            threshold_quantity: 1,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-bahan-2-${Date.now()}`,
+            name: 'Telur',
+            quantity: 30,
+            unit: 'butir',
+            cost_price: 2500,
+            threshold_quantity: 5,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-bahan-3-${Date.now()}`,
+            name: 'Ceker Ayam',
+            quantity: 3,
+            unit: 'kg',
+            cost_price: 35000,
+            threshold_quantity: 1,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-bahan-4-${Date.now()}`,
+            name: 'Kwetiau',
+            quantity: 10,
+            unit: 'bungkus',
+            cost_price: 8500,
+            threshold_quantity: 3,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-bahan-5-${Date.now()}`,
+            name: 'Makaroni Pipa',
+            quantity: 7,
+            unit: 'kg',
+            cost_price: 18000,
+            threshold_quantity: 2,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          
+          // BUMBU category examples
+          {
+            id: `inv-bumbu-1-${Date.now()}`,
+            name: 'Bawang Putih',
+            quantity: 2,
+            unit: 'kg',
+            cost_price: 30000,
+            threshold_quantity: 0.5,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-bumbu-2-${Date.now()}`,
+            name: 'Bawang Merah',
+            quantity: 1.5,
+            unit: 'kg',
+            cost_price: 25000,
+            threshold_quantity: 0.5,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-bumbu-3-${Date.now()}`,
+            name: 'Kencur',
+            quantity: 1,
+            unit: 'kg',
+            cost_price: 40000,
+            threshold_quantity: 0.3,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-bumbu-4-${Date.now()}`,
+            name: 'Cabe Rawit Merah',
+            quantity: 3,
+            unit: 'kg',
+            cost_price: 45000,
+            threshold_quantity: 0.5,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-bumbu-5-${Date.now()}`,
+            name: 'Saos Belibis',
+            quantity: 4,
+            unit: 'botol',
+            cost_price: 18000,
+            threshold_quantity: 1,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          
+          // MINUMAN category examples
+          {
+            id: `inv-minuman-1-${Date.now()}`,
+            name: 'Air Mineral Vit',
+            quantity: 24,
+            unit: 'botol',
+            cost_price: 3500,
+            threshold_quantity: 6,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-minuman-2-${Date.now()}`,
+            name: 'Goodday Moccacino',
+            quantity: 15,
+            unit: 'botol',
+            cost_price: 7000,
+            threshold_quantity: 5,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-minuman-3-${Date.now()}`,
+            name: 'Goodday Cappucino',
+            quantity: 15,
+            unit: 'botol',
+            cost_price: 7000,
+            threshold_quantity: 5,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-minuman-4-${Date.now()}`,
+            name: 'Teh Pucuk Harum',
+            quantity: 20,
+            unit: 'botol',
+            cost_price: 5000,
+            threshold_quantity: 5,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-minuman-5-${Date.now()}`,
+            name: 'Jeruk Limau',
+            quantity: 15,
+            unit: 'buah',
+            cost_price: 1000,
+            threshold_quantity: 5,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          
+          // PERLENGKAPAN category examples
+          {
+            id: `inv-perlengkapan-1-${Date.now()}`,
+            name: 'Plastik Seblak',
+            quantity: 100,
+            unit: 'lembar',
+            cost_price: 200,
+            threshold_quantity: 20,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-perlengkapan-2-${Date.now()}`,
+            name: 'Plastik Krupuk',
+            quantity: 100,
+            unit: 'lembar',
+            cost_price: 150,
+            threshold_quantity: 20,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-perlengkapan-3-${Date.now()}`,
+            name: 'Sedotan',
+            quantity: 200,
+            unit: 'buah',
+            cost_price: 100,
+            threshold_quantity: 50,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-perlengkapan-4-${Date.now()}`,
+            name: 'Steropom Mangkuk',
+            quantity: 50,
+            unit: 'buah',
+            cost_price: 1500,
+            threshold_quantity: 15,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-perlengkapan-5-${Date.now()}`,
+            name: 'Tissue',
+            quantity: 10,
+            unit: 'pak',
+            cost_price: 15000,
+            threshold_quantity: 3,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          
+          // PERALATAN category examples
+          {
+            id: `inv-peralatan-1-${Date.now()}`,
+            name: 'Piring',
+            quantity: 20,
+            unit: 'buah',
+            cost_price: 10000,
+            threshold_quantity: 5,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-peralatan-2-${Date.now()}`,
+            name: 'Mangkuk',
+            quantity: 15,
+            unit: 'buah',
+            cost_price: 8000,
+            threshold_quantity: 5,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-peralatan-3-${Date.now()}`,
+            name: 'Sendok',
+            quantity: 30,
+            unit: 'buah',
+            cost_price: 3000,
+            threshold_quantity: 10,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-peralatan-4-${Date.now()}`,
+            name: 'Wajan',
+            quantity: 3,
+            unit: 'buah',
+            cost_price: 80000,
+            threshold_quantity: 1,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: `inv-peralatan-5-${Date.now()}`,
+            name: 'Kompor',
+            quantity: 2,
+            unit: 'buah',
+            cost_price: 350000,
+            threshold_quantity: 1,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ];
+        
+        // Add example items to localStorage
+        exampleItems.forEach(item => {
+          localStorageHelper.addInventoryItem(item);
+        });
+        
+        // Update inventory items list
+        inventoryItems = localStorageHelper.getInventoryItems();
+      }
+      
       setItems(inventoryItems);
       setFilteredItems(inventoryItems);
       setIsLoading(false);
