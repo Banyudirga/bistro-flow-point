@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -32,55 +33,6 @@ interface InventoryFormData {
   threshold_quantity: number | null;
 }
 
-// Define inventory categories
-const INVENTORY_CATEGORIES = ['SEMUA', 'BAHAN', 'BUMBU', 'MINUMAN', 'PERLENGKAPAN', 'PERALATAN'];
-
-// Function to determine item category based on name or other properties
-const getCategoryForItem = (item: InventoryItem): string => {
-  const name = item.name.toLowerCase();
-  
-  // Food ingredients
-  if (name.includes('ayam') || name.includes('fillet') || name.includes('daging') || 
-      name.includes('telur') || name.includes('tepung') || name.includes('ikan') ||
-      name.includes('baso') || name.includes('dumpling') || name.includes('ceker') ||
-      name.includes('tulang') || name.includes('sayur') || name.includes('sawi') ||
-      name.includes('jamur') || name.includes('tofu') || name.includes('tahu') ||
-      name.includes('cumi') || name.includes('udang') || name.includes('paha') ||
-      name.includes('sayap') || name.includes('kulit') || name.includes('lidah') ||
-      name.includes('kerupuk') || name.includes('krupuk') || name.includes('timun')) {
-    return 'BAHAN';
-  }
-  
-  // Spices and seasonings
-  if (name.includes('bawang') || name.includes('cabe') || name.includes('garam') ||
-      name.includes('merica') || name.includes('kencur') || name.includes('royco') ||
-      name.includes('saos') || name.includes('kecap') || name.includes('rawit') ||
-      name.includes('jeruk') || name.includes('wijen')) {
-    return 'BUMBU';
-  }
-  
-  // Drinks
-  if (name.includes('air') || name.includes('minuman') || name.includes('goodday') ||
-      name.includes('vit') || name.includes('teh') || name.includes('kopi')) {
-    return 'MINUMAN';
-  }
-  
-  // Utensils and equipment
-  if (name.includes('mangkuk') || name.includes('piring') || name.includes('sendok') ||
-      name.includes('garpu') || name.includes('pisau') || name.includes('wajan') ||
-      name.includes('kompor') || name.includes('steropom')) {
-    return 'PERALATAN';
-  }
-  
-  // Supplies
-  if (name.includes('plastik') || name.includes('sedotan') || name.includes('tissue') ||
-      name.includes('serbet') || name.includes('lap')) {
-    return 'PERLENGKAPAN';
-  }
-  
-  return 'BAHAN'; // Default category
-};
-
 const Inventory = () => {
   const { user } = useAuth();
   
@@ -98,17 +50,14 @@ const Inventory = () => {
   
   // State for inventory items
   const [items, setItems] = useState<InventoryItem[]>([]);
-  const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [activeCategory, setActiveCategory] = useState('SEMUA');
 
   // Load inventory items from localStorage
   useEffect(() => {
     try {
       const inventoryItems = localStorageHelper.getInventoryItems();
       setItems(inventoryItems);
-      setFilteredItems(inventoryItems);
       setIsLoading(false);
     } catch (err) {
       console.error('Error loading inventory items:', err);
@@ -116,16 +65,6 @@ const Inventory = () => {
       setIsLoading(false);
     }
   }, []);
-  
-  // Filter items when category changes
-  useEffect(() => {
-    if (activeCategory === 'SEMUA') {
-      setFilteredItems(items);
-    } else {
-      const filtered = items.filter(item => getCategoryForItem(item) === activeCategory);
-      setFilteredItems(filtered);
-    }
-  }, [activeCategory, items]);
   
   // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,11 +174,6 @@ const Inventory = () => {
     }
   };
   
-  // Handle category button click
-  const handleCategoryClick = (category: string) => {
-    setActiveCategory(category);
-  };
-  
   // Check if user is authenticated
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -261,20 +195,6 @@ const Inventory = () => {
         )}
       </div>
       
-      {/* Category Filter Buttons */}
-      <div className="flex flex-wrap gap-2">
-        {INVENTORY_CATEGORIES.map(category => (
-          <Button
-            key={category}
-            variant={activeCategory === category ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleCategoryClick(category)}
-          >
-            {category}
-          </Button>
-        ))}
-      </div>
-      
       {isLoading ? (
         <div className="flex justify-center p-8">Memuat inventaris...</div>
       ) : error ? (
@@ -289,7 +209,7 @@ const Inventory = () => {
       ) : (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Item Inventaris {activeCategory !== 'SEMUA' ? `- ${activeCategory}` : ''}</CardTitle>
+            <CardTitle>Item Inventaris</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -305,8 +225,8 @@ const Inventory = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredItems && filteredItems.length > 0 ? (
-                  filteredItems.map(item => (
+                {items && items.length > 0 ? (
+                  items.map(item => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
@@ -346,9 +266,7 @@ const Inventory = () => {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={canManageInventory ? 7 : 6} className="text-center py-6">
-                      {activeCategory === 'SEMUA' 
-                        ? 'Tidak ada item inventaris ditemukan.' 
-                        : `Tidak ada item inventaris dalam kategori ${activeCategory}.`}
+                      Tidak ada item inventaris ditemukan.
                     </TableCell>
                   </TableRow>
                 )}

@@ -44,14 +44,10 @@ export const useMenuItems = () => {
       const localItems = localStorageHelper.getMenuItems();
       setMenuItems(localItems);
       
-      // Extract categories and map to display names
+      // Extract categories
       if (localItems && localItems.length > 0) {
         const uniqueCategories = Array.from(new Set(localItems.map(item => item.category)));
-        // Map categories to display names for UI
-        const displayCategories = uniqueCategories.map(cat => 
-          categoryMapOrigToDisplay[cat] || cat
-        );
-        setCategories(displayCategories);
+        setCategories(uniqueCategories);
       }
       
       setIsLoading(false);
